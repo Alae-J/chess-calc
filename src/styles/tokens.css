@@ -61,6 +61,11 @@
   animation: caseb-pulse var(--duration-caseb-pulse) ease-in-out;
 }
 
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 /*
  * Tailwind directives. Kept at the bottom so any real CSS `@import`
  * statements added later (e.g., chessground theme imports in Task 16)
