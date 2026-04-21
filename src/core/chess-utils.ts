@@ -45,3 +45,29 @@ export function fenSideToMove(fen: FEN): 'w' | 'b' | null {
     return null;
   }
 }
+
+/**
+ * Apply a move specified by from/to squares (and optional promotion) to a
+ * FEN, and return the resulting SAN string. Returns null if the FEN is
+ * invalid or the move is illegal. Follows this module's policy of returning
+ * null on invalid input rather than throwing.
+ */
+export function sanFromMove(
+  fen: FEN,
+  from: string,
+  to: string,
+  promotion?: 'q' | 'r' | 'b' | 'n',
+): SAN | null {
+  let chess: Chess;
+  try {
+    chess = new Chess(fen);
+  } catch {
+    return null;
+  }
+  try {
+    const move = chess.move({ from, to, promotion });
+    return move.san;
+  } catch {
+    return null;
+  }
+}
