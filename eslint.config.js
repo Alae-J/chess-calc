@@ -60,17 +60,26 @@ export default tseslint.config(
         'error',
         {
           zones: [
-            {
-              target: 'src/core',
-              from: ['src/ui', 'src/entrypoints', 'src/state'],
-            },
-            {
-              target: 'src/adapters',
-              from: ['src/ui', 'src/entrypoints', 'src/state'],
-            },
+            { target: 'src/core', from: ['src/ui', 'src/entrypoints', 'src/state', 'src/dev'] },
+            { target: 'src/adapters', from: ['src/ui', 'src/entrypoints', 'src/state', 'src/dev'] },
+            { target: 'src/state/store.ts', from: ['src/adapters', 'src/ui', 'src/entrypoints', 'src/dev'] },
+            { target: 'src/state/selectors.ts', from: ['src/adapters', 'src/ui', 'src/entrypoints', 'src/dev'] },
+            { target: 'src/ui', from: ['src/adapters', 'src/entrypoints', 'src/dev'] },
           ],
         },
       ],
+    },
+  },
+  {
+    files: ['src/state/store.ts', 'src/state/selectors.ts'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [
+          'react', 'react-dom', 'chessground', 'lucide-react', 'tailwindcss',
+          '@/ui/*', '@/ui/**',
+          '@/entrypoints/*', '@/entrypoints/**',
+        ],
+      }],
     },
   },
   prettierConfig,
