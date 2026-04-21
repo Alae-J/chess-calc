@@ -11,10 +11,23 @@ export default defineConfig({
     environment: 'node',
     globals: true,
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+    environmentMatchGlobs: [
+      ['src/ui/**/*.test.{ts,tsx}', 'jsdom'],
+      ['src/state/**/*.test.ts', 'jsdom'],
+    ],
+    setupFiles: ['./src/test-setup.ts'],
     coverage: {
       provider: 'v8',
-      include: ['src/core/**', 'src/adapters/**'],
-      exclude: ['src/core/types.ts', 'src/adapters/adapter.ts', 'src/**/*.test.ts'],
+      include: ['src/core/**', 'src/adapters/**', 'src/state/**', 'src/ui/**'],
+      exclude: [
+        'src/core/types.ts',
+        'src/adapters/adapter.ts',
+        'src/ui/Chessground.tsx',
+        'src/ui/MiniBoard.tsx',
+        'src/ui/Overlay.tsx',
+        'src/**/*.test.{ts,tsx}',
+        'src/dev/**',
+      ],
       thresholds: {
         lines: 90,
         branches: 85,
