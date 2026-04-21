@@ -125,3 +125,41 @@ describe('MockAdapter.play / playOne', () => {
     expect(seen).toEqual(['e4', 'e5']);
   });
 });
+
+describe('MockAdapter.reset', () => {
+  it('updates current FEN, resets ply, clears queue, does not fire subscribers', () => {
+    const a = new MockAdapter();
+    const seen: string[] = [];
+    a.onMove((ev) => seen.push(ev.san));
+
+    a.script(['e4', 'e5']);
+    a.emit('d4'); // ply = 1, not from the queue
+    const differentFen =
+      'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+    a.reset(differentFen);
+
+    expect(a.getCurrentFEN()).toBe(differentFen);
+    // Subsequent emit should produce ply=1 (reset cleared ply)
+    seen.length = 0;
+    a.emit('e4');
+    const last = seen[seen.length - 1];
+    expect(last).toBe('e4');
+    // Play the cleared queue — nothing should fire.
+    seen.length = 0;
+    a.play();
+    expect(seen).toEqual([]);
+  });
+
+  it('throws InvalidFenError on malformed newFen', () => {
+    const a = new MockAdapter();
+    expect(() => a.reset('junk')).toThrow();
+  });
+
+  it('does not notify subscribers during reset', () => {
+    const a = new MockAdapter();
+    let called = 0;
+    a.onMove(() => (called += 1));
+    a.reset('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1');
+    expect(called).toBe(0);
+  });
+});

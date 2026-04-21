@@ -97,4 +97,20 @@ export class MockAdapter implements BoardAdapter {
     if (next === undefined) return;
     this.emit(next);
   }
+
+  /**
+   * Jump to a new position. Resets internal ply to 0 AND clears any unplayed
+   * queued script — reset means reset; queued moves do not survive. Does not
+   * fire subscribers.
+   *
+   * @throws {InvalidFenError} on malformed `fen`.
+   */
+  reset(fen: FEN): void {
+    if (!isValidFen(fen)) {
+      throw new InvalidFenError(fen);
+    }
+    this.currentFen = fen;
+    this.ply = 0;
+    this.queue = [];
+  }
 }
