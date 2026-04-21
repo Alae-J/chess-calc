@@ -205,3 +205,19 @@ describe('advanceRealGame — Case A2 (currentId in pruned sibling subtree)', ()
     expect(Object.keys(t4.nodes)).toHaveLength(1); // only the new root survives
   });
 });
+
+describe('advanceRealGame — Case A3 (currentId was old root)', () => {
+  it('resets currentId to the new root when current was the old root', () => {
+    const t0 = createTree(START_FEN, { idGen: counterIdGen() });
+    const t1 = playMove(t0, 'e4');
+    const t2 = navigateUp(t1); // currentId = old root
+    expect(t2.currentId).toBe(t0.rootId);
+
+    const fenAfterE4 =
+      'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1';
+    const t3 = advanceRealGame(t2, 'e4', fenAfterE4);
+
+    expect(t3.currentId).toBe(t3.rootId);
+    expect(t3.nodes[t0.rootId]).toBeUndefined(); // old root removed
+  });
+});
