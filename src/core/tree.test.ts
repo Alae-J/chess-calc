@@ -187,3 +187,21 @@ describe('advanceRealGame — Case A1 (currentId in surviving subtree)', () => {
     expect(t3.nodes[t0.rootId]).toBeUndefined();
   });
 });
+
+describe('advanceRealGame — Case A2 (currentId in pruned sibling subtree)', () => {
+  it('resets currentId to the new root when current was on a sibling line', () => {
+    const t0 = createTree(START_FEN, { idGen: counterIdGen() });
+    const t1 = playMove(t0, 'e4');      // n1 child of root
+    const t2 = navigateUp(t1);
+    const t3 = playMove(t2, 'd4');      // n2 child of root, currentId = n2
+    // Now root has two children (n1=e4, n2=d4). currentId = n2 (d4).
+
+    // Real game plays 1. e4 — matches n1. n2 (and its subtree) gets pruned.
+    const fenAfterE4 =
+      'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1';
+    const t4 = advanceRealGame(t3, 'e4', fenAfterE4);
+
+    expect(t4.currentId).toBe(t4.rootId); // reset
+    expect(Object.keys(t4.nodes)).toHaveLength(1); // only the new root survives
+  });
+});
