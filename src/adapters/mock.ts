@@ -113,4 +113,9 @@ export class MockAdapter implements BoardAdapter {
     this.ply = 0;
     this.queue = [];
   }
+
+  /** Remove all subscribers. Further emits are no-ops from the observer POV. */
+  dispose(): void {
+    this.subscribers.clear();
+  }
 }

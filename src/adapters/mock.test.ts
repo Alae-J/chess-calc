@@ -163,3 +163,15 @@ describe('MockAdapter.reset', () => {
     expect(called).toBe(0);
   });
 });
+
+describe('MockAdapter.dispose', () => {
+  it('removes all subscribers; subsequent emits fire nothing', () => {
+    const a = new MockAdapter();
+    let called = 0;
+    a.onMove(() => (called += 1));
+    a.onMove(() => (called += 1));
+    a.dispose();
+    a.emit('e4');
+    expect(called).toBe(0);
+  });
+});
