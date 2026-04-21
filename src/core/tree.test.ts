@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createTree, getBreadcrumb, getCurrentChildren, getCurrentParentMove, navigateTo, navigateUp, playMove } from './tree';
+import { advanceRealGame, createTree, getBreadcrumb, getCurrentChildren, getCurrentParentMove, navigateTo, navigateUp, playMove } from './tree';
 import { InvalidFenError, type IdGen, type NodeId } from './types';
 
 const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
@@ -133,5 +133,12 @@ describe('navigateUp', () => {
   it('returns the input tree reference-identical at the root', () => {
     const t0 = createTree(START_FEN, { idGen: counterIdGen() });
     expect(navigateUp(t0)).toBe(t0);
+  });
+});
+
+describe('advanceRealGame — boundary validation', () => {
+  it('throws InvalidFenError when newFen is malformed', () => {
+    const t0 = createTree(START_FEN, { idGen: counterIdGen() });
+    expect(() => advanceRealGame(t0, 'e4', 'junk')).toThrow(InvalidFenError);
   });
 });

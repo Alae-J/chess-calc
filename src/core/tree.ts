@@ -159,3 +159,52 @@ export function navigateUp(tree: CalculationTree): CalculationTree {
   if (!current || current.parentId === null) return tree;
   return { ...tree, currentId: current.parentId };
 }
+
+/**
+ * Called when the real game's position advances on the host board.
+ *
+ * Before any dispatch, validates `newFen` via `isValidFen` — throws
+ * InvalidFenError on junk. Consistent with the module-wide rule that bad
+ * FEN input always throws.
+ *
+ * Case dispatch:
+ * - A: playedSan matches a child of rootId, newFen === child.fenAfter.
+ *      Slide root forward; prune old root and siblings.
+ * - B: playedSan matches a child, newFen !== child.fenAfter.
+ *      Trust the adapter. Overwrite child.fenAfter. console.warn.
+ * - C: playedSan matches no child. Discard tree entirely; fresh tree at
+ *      newFen (idGen preserved).
+ *
+ * For currentId after Cases A and B:
+ * - A1: currentId was the played child or a descendant → preserved.
+ * - A2: currentId was in a pruned sibling subtree → reset to new root.
+ * - A3: currentId was the old root → reset to new root.
+ *
+ * @throws {InvalidFenError} on malformed `newFen`.
+ */
+export function advanceRealGame(
+  tree: CalculationTree,
+  playedSan: SAN,
+  newFen: FEN,
+): CalculationTree {
+  if (!isValidFen(newFen)) {
+    throw new InvalidFenError(newFen);
+  }
+
+  const root = tree.nodes[tree.rootId];
+  if (!root) {
+    // Defensive: shouldn't happen given invariants, but be safe.
+    return createTree(newFen, { idGen: tree.idGen });
+  }
+
+  const matchedChildId = root.children.find((id) => tree.nodes[id]?.move === playedSan);
+
+  if (matchedChildId === undefined) {
+    // Case C: no match — discard tree.
+    return createTree(newFen, { idGen: tree.idGen });
+  }
+
+  // Cases A and B are implemented in subsequent tasks.
+  // For now, fall through to Case C so the boundary-validation test passes.
+  return createTree(newFen, { idGen: tree.idGen });
+}
