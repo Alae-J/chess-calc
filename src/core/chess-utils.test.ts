@@ -45,4 +45,9 @@ describe('fenSideToMove', () => {
   it('returns "b" after 1. e4', () => {
     expect(fenSideToMove('rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1')).toBe('b');
   });
+
+  it('returns null on invalid FEN', () => {
+    expect(fenSideToMove('junk')).toBeNull();
+    expect(fenSideToMove('')).toBeNull();
+  });
 });
