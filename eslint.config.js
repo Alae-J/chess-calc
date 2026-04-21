@@ -33,9 +33,12 @@ export default tseslint.config(
       'no-console': 'error',
     },
   },
-  // Layering: core and adapters are pure TS. No UI/state/entrypoint imports.
+  // Layering: each zone below lives in a config block scoped to the TARGET's files,
+  // because import/no-restricted-paths only evaluates zones on files that match the
+  // block's `files` glob. Consolidating all zones in one block silently skips any
+  // zone whose target is outside that block's files.
   {
-    files: ['src/core/**', 'src/adapters/**'],
+    files: ['src/core/**'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -61,10 +64,38 @@ export default tseslint.config(
         {
           zones: [
             { target: 'src/core', from: ['src/ui', 'src/entrypoints', 'src/state', 'src/dev'] },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/adapters/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            'react',
+            'react-dom',
+            'zustand',
+            'chessground',
+            'lucide-react',
+            'tailwindcss',
+            '@/ui/*',
+            '@/ui/**',
+            '@/entrypoints/*',
+            '@/entrypoints/**',
+            '@/state/*',
+            '@/state/**',
+          ],
+        },
+      ],
+      'import/no-restricted-paths': [
+        'error',
+        {
+          zones: [
             { target: 'src/adapters', from: ['src/ui', 'src/entrypoints', 'src/state', 'src/dev'] },
-            { target: 'src/state/store.ts', from: ['src/adapters', 'src/ui', 'src/entrypoints', 'src/dev'] },
-            { target: 'src/state/selectors.ts', from: ['src/adapters', 'src/ui', 'src/entrypoints', 'src/dev'] },
-            { target: 'src/ui', from: ['src/adapters', 'src/entrypoints', 'src/dev'] },
           ],
         },
       ],
@@ -73,13 +104,38 @@ export default tseslint.config(
   {
     files: ['src/state/store.ts', 'src/state/selectors.ts'],
     rules: {
-      'no-restricted-imports': ['error', {
-        patterns: [
-          'react', 'react-dom', 'chessground', 'lucide-react', 'tailwindcss',
-          '@/ui/*', '@/ui/**',
-          '@/entrypoints/*', '@/entrypoints/**',
-        ],
-      }],
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            'react', 'react-dom', 'chessground', 'lucide-react', 'tailwindcss',
+            '@/ui/*', '@/ui/**',
+            '@/entrypoints/*', '@/entrypoints/**',
+          ],
+        },
+      ],
+      'import/no-restricted-paths': [
+        'error',
+        {
+          zones: [
+            { target: 'src/state/store.ts', from: ['src/adapters', 'src/ui', 'src/entrypoints', 'src/dev'] },
+            { target: 'src/state/selectors.ts', from: ['src/adapters', 'src/ui', 'src/entrypoints', 'src/dev'] },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/ui/**'],
+    rules: {
+      'import/no-restricted-paths': [
+        'error',
+        {
+          zones: [
+            { target: 'src/ui', from: ['src/adapters', 'src/entrypoints', 'src/dev'] },
+          ],
+        },
+      ],
     },
   },
   prettierConfig,
