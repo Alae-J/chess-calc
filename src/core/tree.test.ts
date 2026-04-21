@@ -238,6 +238,7 @@ describe('advanceRealGame — Case B (FEN mismatch)', () => {
     const t1 = playMove(t0, 'e4');
     const t2 = playMove(t1, 'e5');
     const deepId = t2.currentId;
+    const originalDeepFen = t2.nodes[deepId]!.fenAfter;
 
     // Adapter reports a different FEN than our stored fenAfter for e4.
     // Construct a valid but different FEN that would (in principle) also
@@ -255,6 +256,12 @@ describe('advanceRealGame — Case B (FEN mismatch)', () => {
       // Subtree survives (deepId preserved)
       expect(t3.nodes[deepId]).toBeDefined();
       expect(t3.currentId).toBe(deepId);
+
+      // Intentional: advanceRealGame corrects the immediate child's fenAfter
+      // but does NOT recompute descendants. Their FENs are stale-by-design.
+      // The deepId node's fenAfter must still be the value computed from the
+      // original pre-mismatch e4 FEN, not re-derived from reportedFen.
+      expect(t3.nodes[deepId]!.fenAfter).toBe(originalDeepFen);
 
       // Warning fired, includes "FEN mismatch"
       expect(warnSpy).toHaveBeenCalledTimes(1);
