@@ -85,4 +85,13 @@ describe('Breadcrumb', () => {
     await userEvent.keyboard('{Escape}');
     expect(screen.queryByText('Nf3')).not.toBeInTheDocument();
   });
+
+  it('clicking outside the popover closes it', async () => {
+    const store = seed(['e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'a6']);
+    renderWithStore(store);
+    await userEvent.click(screen.getByRole('button', { name: /…|\.\.\./ }));
+    expect(screen.getByText('Nf3')).toBeInTheDocument();
+    await userEvent.click(document.body);
+    expect(screen.queryByText('Nf3')).not.toBeInTheDocument();
+  });
 });
