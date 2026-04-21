@@ -75,3 +75,17 @@ describe('playMove — new child', () => {
     );
   });
 });
+
+describe('playMove — existing child', () => {
+  it('navigates into the existing child instead of duplicating', () => {
+    const t0 = createTree(START_FEN, { idGen: counterIdGen() });
+    const t1 = playMove(t0, 'e4');
+    // Go back up and play e4 again
+    const t2 = { ...t1, currentId: t1.rootId };
+    const t3 = playMove(t2, 'e4');
+
+    expect(Object.keys(t3.nodes)).toHaveLength(2);
+    expect(t3.nodes[t1.rootId]!.children).toHaveLength(1);
+    expect(t3.currentId).toBe(t1.currentId); // back in the original e4 child
+  });
+});
