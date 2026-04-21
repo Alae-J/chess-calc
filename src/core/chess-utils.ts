@@ -1,4 +1,4 @@
-import { Chess } from 'chess.js';
+import { Chess, validateFen } from 'chess.js';
 import type { FEN, SAN } from './types';
 
 /**
@@ -18,4 +18,9 @@ export function applySan(fen: FEN, san: SAN): FEN | null {
     return null;
   }
   return chess.fen();
+}
+
+/** Returns true if `fen` is a well-formed, legal FEN per chess.js. */
+export function isValidFen(fen: string): boolean {
+  return validateFen(fen).ok;
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applySan } from './chess-utils';
+import { applySan, isValidFen } from './chess-utils';
 
 const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
@@ -19,5 +19,20 @@ describe('applySan', () => {
     const after = applySan(fenReadyToCastle, 'O-O');
     expect(after).not.toBeNull();
     expect(after).toContain('R4RK1'); // kingside castled king on g1, rook on f1
+  });
+});
+
+describe('isValidFen', () => {
+  it('returns true for the standard starting position', () => {
+    expect(isValidFen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')).toBe(true);
+  });
+
+  it('returns false for a FEN missing the black king', () => {
+    expect(isValidFen('rnbq1bnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')).toBe(false);
+  });
+
+  it('returns false for structurally malformed input', () => {
+    expect(isValidFen('not a fen')).toBe(false);
+    expect(isValidFen('')).toBe(false);
   });
 });
