@@ -10,7 +10,7 @@
  * light override, all surface values consumed via var() from components.
  */
 
-:root {
+:root, :host {
   --bg: #0b0d0f;
   --surface: #14171a;
   --surface-elevated: #1b1f23;
@@ -33,7 +33,7 @@
 }
 
 @media (prefers-color-scheme: light) {
-  :root {
+  :root, :host {
     --bg: #f7f8f9;
     --surface: #ffffff;
     --surface-elevated: #ffffff;
