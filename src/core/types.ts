@@ -13,6 +13,7 @@ export type NodeId = string & { readonly __brand: 'NodeId' };
 export type IdGen = () => NodeId;
 
 /** Default id generator, backed by nanoid. */
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
 export const defaultIdGen: IdGen = () => nanoid() as NodeId;
 
 /** One node in the calculation tree. Root node has `parentId === null` and `move === null`. */
