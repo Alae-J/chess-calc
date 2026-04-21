@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { advanceRealGame, createTree, getBreadcrumb, getCurrentChildren, getCurrentParentMove, navigateTo, navigateUp, playMove } from './tree';
-import { InvalidFenError, type IdGen, type NodeId } from './types';
+import { InvalidFenError, type IdGen, type NodeId, type CalculationTree } from './types';
+import { applySan } from './chess-utils';
 
 const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
@@ -252,5 +253,105 @@ describe('advanceRealGame — Case B (FEN mismatch)', () => {
     } finally {
       warnSpy.mockRestore();
     }
+  });
+});
+
+function assertInvariants(tree: CalculationTree): void {
+  // 1. Every non-root node's parentId exists in nodes.
+  // 2. Every id in any children[] exists in nodes.
+  // 3. rootId and currentId exist in nodes.
+  // 4. child.fenAfter === applySan(parent.fenAfter, child.move)
+  // 5. No orphans: every node reachable from rootId.
+  expect(tree.nodes[tree.rootId]).toBeDefined();
+  expect(tree.nodes[tree.currentId]).toBeDefined();
+
+  const reachable = new Set<string>();
+  const stack = [tree.rootId];
+  while (stack.length > 0) {
+    const id = stack.pop()!;
+    if (reachable.has(id)) continue;
+    reachable.add(id);
+    const n = tree.nodes[id];
+    expect(n).toBeDefined();
+    for (const childId of n!.children) {
+      expect(tree.nodes[childId]).toBeDefined();
+      stack.push(childId);
+    }
+  }
+  // Invariant 5: the reachable set equals all nodes.
+  expect(reachable.size).toBe(Object.keys(tree.nodes).length);
+
+  for (const n of Object.values(tree.nodes)) {
+    if (n.parentId !== null) {
+      const parent = tree.nodes[n.parentId];
+      expect(parent).toBeDefined();
+      // Invariant 4:
+      const expectedFen = applySan(parent!.fenAfter, n.move!);
+      expect(n.fenAfter).toBe(expectedFen);
+    }
+  }
+}
+
+describe('tree invariants hold across op sequences', () => {
+  it('holds after createTree', () => {
+    assertInvariants(createTree(START_FEN, { idGen: counterIdGen() }));
+  });
+
+  it('holds after a series of playMove / navigateUp / navigateTo', () => {
+    let t = createTree(START_FEN, { idGen: counterIdGen() });
+    t = playMove(t, 'e4');
+    t = playMove(t, 'e5');
+    t = navigateUp(t);
+    t = playMove(t, 'c5'); // siblings branch
+    t = navigateTo(t, t.rootId);
+    t = playMove(t, 'd4');
+    assertInvariants(t);
+  });
+
+  it('holds after advanceRealGame Case A (slide root forward)', () => {
+    let t = createTree(START_FEN, { idGen: counterIdGen() });
+    t = playMove(t, 'e4');
+    t = playMove(t, 'e5');
+    t = advanceRealGame(
+      t,
+      'e4',
+      'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1',
+    );
+    assertInvariants(t);
+  });
+
+  it('holds after advanceRealGame Case C (reset)', () => {
+    let t = createTree(START_FEN, { idGen: counterIdGen() });
+    t = playMove(t, 'e4');
+    t = advanceRealGame(
+      t,
+      'd4',
+      'rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq - 0 1',
+    );
+    assertInvariants(t);
+  });
+
+  // Deliberate omission: no invariant check after Case B. Invariant 4
+  // (child.fenAfter === applySan(parent.fenAfter, child.move)) is *by
+  // design* weakened for the direct children of a node whose fenAfter was
+  // overwritten by Case B. The spec's "trust the adapter" rule preserves
+  // the subtree even when local FEN consistency with ancestors is lost.
+  // If tighter consistency is later required, recompute descendant
+  // fenAfter values via BFS from the overridden node.
+
+  it('playMove with existing-child SAN does not duplicate (invariant 6)', () => {
+    const t0 = createTree(START_FEN, { idGen: counterIdGen() });
+    const t1 = playMove(t0, 'e4');
+    const t2 = navigateTo(t1, t1.rootId);
+    const before = Object.keys(t2.nodes).length;
+    const t3 = playMove(t2, 'e4');
+    expect(Object.keys(t3.nodes).length).toBe(before);
+    expect(t2.nodes[t2.rootId]!.children).toHaveLength(1);
+    expect(t3.nodes[t3.rootId]!.children).toHaveLength(1);
+  });
+
+  it('navigateTo(tree, tree.currentId) is reference-identical (invariant 7)', () => {
+    const t = createTree(START_FEN, { idGen: counterIdGen() });
+    expect(navigateTo(t, t.currentId)).toBe(t);
   });
 });
