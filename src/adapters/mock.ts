@@ -60,4 +60,25 @@ export class MockAdapter implements BoardAdapter {
       sub(ev);
     }
   }
+
+  /**
+   * Queue a sequence of SAN moves to be fired later via {@link play} or
+   * {@link playOne}. Legality is validated at script time by replaying
+   * against a COPY of the adapter's current FEN; the adapter state is NOT
+   * mutated. Illegal moves throw immediately.
+   */
+  script(moves: readonly string[]): this {
+    let fen = this.currentFen;
+    for (const san of moves) {
+      const after = applySan(fen, san);
+      if (after === null) {
+        throw new Error(
+          `MockAdapter.script: illegal move "${san}" from FEN "${fen}"`,
+        );
+      }
+      fen = after;
+    }
+    this.queue.push(...moves);
+    return this;
+  }
 }

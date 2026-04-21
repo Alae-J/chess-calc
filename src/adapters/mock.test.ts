@@ -71,3 +71,26 @@ describe('MockAdapter.emit', () => {
     expect(seen).toEqual([]);
   });
 });
+
+describe('MockAdapter.script', () => {
+  it('validates every move at script time against a copy of current FEN', () => {
+    const a = new MockAdapter();
+    expect(() => a.script(['e4', 'e5', 'Nf3', 'Nc6'])).not.toThrow();
+  });
+
+  it('throws immediately on an illegal move in the script', () => {
+    const a = new MockAdapter();
+    expect(() => a.script(['e4', 'Ke2'])).toThrow(/illegal/i);
+  });
+
+  it('does not mutate current FEN on script() — only on emit/play', () => {
+    const a = new MockAdapter();
+    a.script(['e4', 'e5']);
+    expect(a.getCurrentFEN()).toBe(START_FEN);
+  });
+
+  it('returns `this` for chaining', () => {
+    const a = new MockAdapter();
+    expect(a.script(['e4'])).toBe(a);
+  });
+});
