@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { advanceRealGame, createTree, getBreadcrumb, getCurrentChildren, getCurrentParentMove, navigateTo, navigateUp, playMove } from './tree';
 import { InvalidFenError, type IdGen, type NodeId } from './types';
 
@@ -219,5 +219,38 @@ describe('advanceRealGame — Case A3 (currentId was old root)', () => {
 
     expect(t3.currentId).toBe(t3.rootId);
     expect(t3.nodes[t0.rootId]).toBeUndefined(); // old root removed
+  });
+});
+
+describe('advanceRealGame — Case B (FEN mismatch)', () => {
+  it('overwrites child.fenAfter with newFen, preserves subtree, warns to console', () => {
+    const t0 = createTree(START_FEN, { idGen: counterIdGen() });
+    const t1 = playMove(t0, 'e4');
+    const t2 = playMove(t1, 'e5');
+    const deepId = t2.currentId;
+
+    // Adapter reports a different FEN than our stored fenAfter for e4.
+    // Construct a valid but different FEN that would (in principle) also
+    // follow 1. e4 — for the test, any valid FEN distinct from the expected.
+    const reportedFen =
+      'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 5 5'; // different move counters
+
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const t3 = advanceRealGame(t2, 'e4', reportedFen);
+
+      // Root is the matched child, but its fenAfter was overwritten to newFen
+      expect(t3.nodes[t3.rootId]!.fenAfter).toBe(reportedFen);
+
+      // Subtree survives (deepId preserved)
+      expect(t3.nodes[deepId]).toBeDefined();
+      expect(t3.currentId).toBe(deepId);
+
+      // Warning fired, includes "FEN mismatch"
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy.mock.calls[0]![0]).toMatch(/FEN mismatch/);
+    } finally {
+      warnSpy.mockRestore();
+    }
   });
 });
