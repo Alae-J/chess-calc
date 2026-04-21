@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createTree, getBreadcrumb, getCurrentChildren, getCurrentParentMove, navigateTo, playMove } from './tree';
+import { createTree, getBreadcrumb, getCurrentChildren, getCurrentParentMove, navigateTo, navigateUp, playMove } from './tree';
 import { InvalidFenError, type IdGen, type NodeId } from './types';
 
 const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
@@ -119,5 +119,19 @@ describe('navigateTo', () => {
   it('returns the input tree reference-identical when id is unknown', () => {
     const t0 = createTree(START_FEN, { idGen: counterIdGen() });
     expect(navigateTo(t0, 'doesnotexist' as NodeId)).toBe(t0);
+  });
+});
+
+describe('navigateUp', () => {
+  it('moves currentId to the parent of current', () => {
+    const t0 = createTree(START_FEN, { idGen: counterIdGen() });
+    const t1 = playMove(t0, 'e4');
+    const t2 = navigateUp(t1);
+    expect(t2.currentId).toBe(t1.rootId);
+  });
+
+  it('returns the input tree reference-identical at the root', () => {
+    const t0 = createTree(START_FEN, { idGen: counterIdGen() });
+    expect(navigateUp(t0)).toBe(t0);
   });
 });

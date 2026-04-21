@@ -146,3 +146,16 @@ export function navigateTo(tree: CalculationTree, id: NodeId): CalculationTree {
   if (!(id in tree.nodes)) return tree;
   return { ...tree, currentId: id };
 }
+
+/**
+ * Navigate to the parent of the current node.
+ *
+ * - At root (currentId === rootId, or current.parentId === null): returns
+ *   `tree` reference-identical.
+ * - Otherwise: returns a new tree with `currentId` set to the parent.
+ */
+export function navigateUp(tree: CalculationTree): CalculationTree {
+  const current = tree.nodes[tree.currentId];
+  if (!current || current.parentId === null) return tree;
+  return { ...tree, currentId: current.parentId };
+}
