@@ -75,15 +75,25 @@ export function Chessground({
     // Intentionally empty deps — we want this to run once. Prop updates are handled below.
   }, []);
 
-  // Apply fen updates.
+  // Apply fen / orientation / movable updates together. These three are
+  // COUPLED: `movable.color` must match `orientation` so the player can drag
+  // the flipped side's pieces, and `movable.dests` must track the current
+  // fen. Splitting them into separate effects (as a previous revision did)
+  // let `movable.color` drift on flip — after toggling orientation, the new
+  // side's pieces were not draggable. Keep these props in one effect to
+  // preserve that invariant. If any new chessground config property is added
+  // that depends on fen/orientation/movable, add it here, not in a separate
+  // effect.
   useEffect(() => {
-    apiRef.current?.set({ fen, movable: { dests: computeDests(fen) } });
-  }, [fen]);
-
-  // Apply orientation updates.
-  useEffect(() => {
-    apiRef.current?.set({ orientation });
-  }, [orientation]);
+    apiRef.current?.set({
+      fen,
+      orientation,
+      movable: {
+        ...(movable ? { color: orientation === 'white' ? 'white' : 'black' } : {}),
+        dests: computeDests(fen),
+      },
+    });
+  }, [fen, orientation, movable]);
 
   return <div ref={containerRef} className="cg-wrap" style={{ width: 280, height: 280 }} />;
 }
