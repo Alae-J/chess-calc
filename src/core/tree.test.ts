@@ -89,3 +89,14 @@ describe('playMove — existing child', () => {
     expect(t3.currentId).toBe(t1.currentId); // back in the original e4 child
   });
 });
+
+describe('playMove — illegal SAN', () => {
+  it('returns the input tree reference-identical', () => {
+    const t0 = createTree(START_FEN, { idGen: counterIdGen() });
+    const t1 = playMove(t0, 'Ke2'); // king can't move there from the start
+    expect(t1).toBe(t0);
+
+    const t2 = playMove(t0, 'gibberish');
+    expect(t2).toBe(t0);
+  });
+});
