@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createTree } from './tree';
+import { createTree, getBreadcrumb, getCurrentChildren, getCurrentParentMove } from './tree';
 import { InvalidFenError, type IdGen, type NodeId } from './types';
 
 const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
@@ -33,5 +33,22 @@ describe('createTree', () => {
   it('uses the default idGen when none is provided', () => {
     const tree = createTree(START_FEN);
     expect(tree.rootId).toMatch(/^[A-Za-z0-9_-]{10,}$/); // nanoid default length
+  });
+});
+
+describe('read helpers (on a root-only tree)', () => {
+  it('getCurrentParentMove returns null at the root', () => {
+    const tree = createTree(START_FEN, { idGen: counterIdGen() });
+    expect(getCurrentParentMove(tree)).toBeNull();
+  });
+
+  it('getCurrentChildren returns an empty array on an empty tree', () => {
+    const tree = createTree(START_FEN, { idGen: counterIdGen() });
+    expect(getCurrentChildren(tree)).toEqual([]);
+  });
+
+  it('getBreadcrumb returns an empty array at the root', () => {
+    const tree = createTree(START_FEN, { idGen: counterIdGen() });
+    expect(getBreadcrumb(tree)).toEqual([]);
   });
 });

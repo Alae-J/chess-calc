@@ -8,6 +8,7 @@ import {
   type NodeId,
   defaultIdGen,
 } from './types';
+import type { SAN } from './types';
 
 /**
  * No-op / invalid-input policy for this module:
@@ -51,4 +52,31 @@ export function createTree(
     nodes: { [rootId]: root },
     idGen,
   };
+}
+
+/** Returns the move that led to the current node, or null if current is root. */
+export function getCurrentParentMove(tree: CalculationTree): SAN | null {
+  const current = tree.nodes[tree.currentId];
+  if (!current) return null;
+  return current.move;
+}
+
+/** Returns the child nodes of the current node, in insertion order. */
+export function getCurrentChildren(tree: CalculationTree): CalcNode[] {
+  const current = tree.nodes[tree.currentId];
+  if (!current) return [];
+  return current.children
+    .map((id) => tree.nodes[id])
+    .filter((n): n is CalcNode => n !== undefined);
+}
+
+/** Returns the SAN path from root to the current node, excluding the root's null move. */
+export function getBreadcrumb(tree: CalculationTree): SAN[] {
+  const path: SAN[] = [];
+  let cursor: CalcNode | undefined = tree.nodes[tree.currentId];
+  while (cursor && cursor.move !== null) {
+    path.unshift(cursor.move);
+    cursor = cursor.parentId ? tree.nodes[cursor.parentId] : undefined;
+  }
+  return path;
 }
