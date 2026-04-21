@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createTree, getBreadcrumb, getCurrentChildren, getCurrentParentMove } from './tree';
+import { createTree, getBreadcrumb, getCurrentChildren, getCurrentParentMove, playMove } from './tree';
 import { InvalidFenError, type IdGen, type NodeId } from './types';
 
 const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
@@ -50,5 +50,28 @@ describe('read helpers (on a root-only tree)', () => {
   it('getBreadcrumb returns an empty array at the root', () => {
     const tree = createTree(START_FEN, { idGen: counterIdGen() });
     expect(getBreadcrumb(tree)).toEqual([]);
+  });
+});
+
+describe('playMove — new child', () => {
+  it('creates a child node and moves currentId into it', () => {
+    const t0 = createTree(START_FEN, { idGen: counterIdGen() });
+    const t1 = playMove(t0, 'e4');
+
+    expect(t1).not.toBe(t0);
+    expect(Object.keys(t1.nodes)).toHaveLength(2);
+
+    const root = t1.nodes[t1.rootId]!;
+    expect(root.children).toHaveLength(1);
+
+    const childId = root.children[0]!;
+    const child = t1.nodes[childId]!;
+    expect(t1.currentId).toBe(childId);
+    expect(child.move).toBe('e4');
+    expect(child.parentId).toBe(t1.rootId);
+    expect(child.ply).toBe(1);
+    expect(child.fenAfter).toBe(
+      'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1',
+    );
   });
 });

@@ -1,4 +1,4 @@
-import { isValidFen } from './chess-utils';
+import { applySan, isValidFen } from './chess-utils';
 import {
   type CalcNode,
   type CalculationTree,
@@ -79,4 +79,57 @@ export function getBreadcrumb(tree: CalculationTree): SAN[] {
     cursor = cursor.parentId ? tree.nodes[cursor.parentId] : undefined;
   }
   return path;
+}
+
+/**
+ * Play `san` from the current node.
+ *
+ * - If `san` matches an existing child's move: navigate to that child,
+ *   return a new tree with updated `currentId`. No duplicate created.
+ * - If `san` is legal but matches no child: create a new child, navigate
+ *   into it.
+ * - If `san` is illegal from the current node's FEN: return `tree`
+ *   reference-identical. Callers MAY use `result === tree` to detect
+ *   rejection.
+ */
+export function playMove(tree: CalculationTree, san: SAN): CalculationTree {
+  const current = tree.nodes[tree.currentId];
+  if (!current) return tree;
+
+  // Does an existing child already cover this SAN?
+  for (const childId of current.children) {
+    const child = tree.nodes[childId];
+    if (child && child.move === san) {
+      if (childId === tree.currentId) return tree;
+      return { ...tree, currentId: childId };
+    }
+  }
+
+  // Try to apply the move. Illegal → return input tree unchanged.
+  const fenAfter = applySan(current.fenAfter, san);
+  if (fenAfter === null) return tree;
+
+  const newId = tree.idGen();
+  const newChild: CalcNode = {
+    id: newId,
+    parentId: current.id,
+    move: san,
+    fenAfter,
+    children: [],
+    ply: current.ply + 1,
+    createdAt: Date.now(),
+  };
+  const updatedParent: CalcNode = {
+    ...current,
+    children: [...current.children, newId],
+  };
+  return {
+    ...tree,
+    currentId: newId,
+    nodes: {
+      ...tree.nodes,
+      [current.id]: updatedParent,
+      [newId]: newChild,
+    },
+  };
 }
