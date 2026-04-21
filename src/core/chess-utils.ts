@@ -24,3 +24,9 @@ export function applySan(fen: FEN, san: SAN): FEN | null {
 export function isValidFen(fen: string): boolean {
   return validateFen(fen).ok;
 }
+
+/** Returns 'w' or 'b' based on which side is to move in the FEN. */
+export function fenSideToMove(fen: FEN): 'w' | 'b' {
+  const chess = new Chess(fen);
+  return chess.turn();
+}

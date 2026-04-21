@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applySan, isValidFen } from './chess-utils';
+import { applySan, fenSideToMove, isValidFen } from './chess-utils';
 
 const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
@@ -34,5 +34,15 @@ describe('isValidFen', () => {
   it('returns false for structurally malformed input', () => {
     expect(isValidFen('not a fen')).toBe(false);
     expect(isValidFen('')).toBe(false);
+  });
+});
+
+describe('fenSideToMove', () => {
+  it('returns "w" from the starting position', () => {
+    expect(fenSideToMove('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')).toBe('w');
+  });
+
+  it('returns "b" after 1. e4', () => {
+    expect(fenSideToMove('rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1')).toBe('b');
   });
 });
