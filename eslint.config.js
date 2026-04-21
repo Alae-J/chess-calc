@@ -132,7 +132,7 @@ export default tseslint.config(
         'error',
         {
           zones: [
-            { target: 'src/ui', from: ['src/adapters', 'src/entrypoints', 'src/dev'] },
+            { target: 'src/ui', from: ['src/adapters', 'src/entrypoints', 'src/dev', 'src/state/bridgeAdapter.ts'] },
           ],
         },
       ],
