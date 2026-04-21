@@ -5,7 +5,7 @@ import prettierConfig from 'eslint-config-prettier';
 
 export default tseslint.config(
   {
-    ignores: ['node_modules/', '.output/', '.wxt/', 'dist/', 'coverage/', 'eslint.config.js'],
+    ignores: ['node_modules/', '.output/', '.wxt/', 'dist/', 'coverage/', 'eslint.config.js', 'postcss.config.js'],
   },
   js.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
