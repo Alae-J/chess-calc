@@ -142,3 +142,21 @@ describe('advanceRealGame — boundary validation', () => {
     expect(() => advanceRealGame(t0, 'e4', 'junk')).toThrow(InvalidFenError);
   });
 });
+
+describe('advanceRealGame — Case C (no matching child)', () => {
+  it('discards the tree and creates a fresh one at newFen, preserving idGen', () => {
+    const idGen = counterIdGen();
+    const t0 = createTree(START_FEN, { idGen });
+    const t1 = playMove(t0, 'e4');
+    const t2 = playMove(t1, 'e5');
+
+    // Real game plays 1. d4 instead — no match with existing children of root
+    const fenAfterD4 = 'rnbqkbnr/pppppppp/8/8/3P4/8/PPP1PPPP/RNBQKBNR b KQkq - 0 1';
+    const t3 = advanceRealGame(t2, 'd4', fenAfterD4);
+
+    expect(Object.keys(t3.nodes)).toHaveLength(1);
+    expect(t3.nodes[t3.rootId]!.fenAfter).toBe(fenAfterD4);
+    expect(t3.idGen).toBe(idGen); // preserved
+    expect(t3.currentId).toBe(t3.rootId);
+  });
+});
