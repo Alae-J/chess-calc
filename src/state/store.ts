@@ -1,5 +1,6 @@
 import { create, type StoreApi, type UseBoundStore } from 'zustand';
 import {
+  advanceRealGame as advanceRealGameTree,
   createTree,
   navigateTo as navigateToTree,
   navigateUp as navigateUpTree,
@@ -81,12 +82,28 @@ export function createChessCalcStore(opts: CreateStoreOptions): ChessCalcStore {
       if (next !== current) set({ tree: next });
     },
 
-    // Implemented in Task 10:
-    advanceRealGame: () => {
-      throw new Error('not implemented');
+    advanceRealGame: (playedSan, newFen) => {
+      const state = get();
+      const tree = state.tree;
+      const root = tree.nodes[tree.rootId];
+
+      // Pre-classify A/B/C so we know which counter to bump alongside the tree update.
+      const matchedId = root?.children.find((id) => tree.nodes[id]?.move === playedSan);
+      const matchedChild = matchedId ? tree.nodes[matchedId] : undefined;
+      const isCaseC = matchedId === undefined;
+      const isCaseB = !isCaseC && matchedChild!.fenAfter !== newFen;
+
+      const nextTree = advanceRealGameTree(tree, playedSan, newFen);
+      const patch: Partial<ChessCalcState> = {};
+      if (nextTree !== tree) patch.tree = nextTree;
+      if (isCaseC) patch.resetVersion = state.resetVersion + 1;
+      if (isCaseB) patch.caseBVersion = state.caseBVersion + 1;
+
+      if (Object.keys(patch).length > 0) set(patch);
     },
-    setOrientation: () => {
-      throw new Error('not implemented');
+
+    setOrientation: (o) => {
+      if (o !== get().orientation) set({ orientation: o });
     },
   }));
 }
