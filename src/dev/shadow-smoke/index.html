@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Shadow-DOM smoke test</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: system-ui, sans-serif;
+      background: #2a2a2a;
+      color: #eee;
+    }
+    #host { margin-top: 16px; }
+    #log {
+      margin-top: 16px;
+      padding: 12px;
+      background: #111;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 12px;
+      min-height: 100px;
+    }
+    .pass { color: #6f6; }
+    .fail { color: #f66; }
+    button { margin-right: 8px; padding: 6px 12px; }
+  </style>
+</head>
+<body>
+  <h1>Chess Calc — Shadow-DOM smoke test</h1>
+  <p>Four binary criteria; all must pass to proceed with Phase 3 shadow-DOM mount.</p>
+  <div>
+    <button id="run-a">(a) Render</button>
+    <button id="run-b">(b) Drag e2→e4</button>
+    <button id="run-c">(c) Animation ~250ms</button>
+    <button id="run-d">(d) CSS visible</button>
+    <button id="run-e">(e) prefers-color-scheme</button>
+  </div>
+  <div id="host"></div>
+  <div id="log"></div>
+  <script type="module" src="./main.ts"></script>
+</body>
+</html>
