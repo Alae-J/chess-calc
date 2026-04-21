@@ -160,3 +160,30 @@ describe('advanceRealGame — Case C (no matching child)', () => {
     expect(t3.currentId).toBe(t3.rootId);
   });
 });
+
+describe('advanceRealGame — Case A1 (currentId in surviving subtree)', () => {
+  it('slides root forward and preserves currentId when it is on the played line', () => {
+    const t0 = createTree(START_FEN, { idGen: counterIdGen() });
+    const t1 = playMove(t0, 'e4');            // currentId = n1 (e4)
+    const t2 = playMove(t1, 'e5');            // currentId = n2 (e5)
+    const deepId = t2.currentId;              // save n2
+
+    // Real game plays 1. e4 — matches child, FENs agree
+    const fenAfterE4 =
+      'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1';
+    const t3 = advanceRealGame(t2, 'e4', fenAfterE4);
+
+    // e4 child is now the root
+    expect(t3.nodes[t3.rootId]!.fenAfter).toBe(fenAfterE4);
+    expect(t3.nodes[t3.rootId]!.parentId).toBeNull();
+    expect(t3.nodes[t3.rootId]!.move).toBeNull(); // root always has null move
+    expect(t3.nodes[t3.rootId]!.ply).toBe(0);     // root always has ply 0
+
+    // currentId (n2 / e5 subtree) survives
+    expect(t3.currentId).toBe(deepId);
+    expect(t3.nodes[deepId]).toBeDefined();
+
+    // Old root (n0) is gone
+    expect(t3.nodes[t0.rootId]).toBeUndefined();
+  });
+});

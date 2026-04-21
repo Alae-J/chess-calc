@@ -193,18 +193,78 @@ export function advanceRealGame(
 
   const root = tree.nodes[tree.rootId];
   if (!root) {
-    // Defensive: shouldn't happen given invariants, but be safe.
     return createTree(newFen, { idGen: tree.idGen });
   }
 
   const matchedChildId = root.children.find((id) => tree.nodes[id]?.move === playedSan);
 
   if (matchedChildId === undefined) {
-    // Case C: no match — discard tree.
+    // Case C: no match.
     return createTree(newFen, { idGen: tree.idGen });
   }
 
-  // Cases A and B are implemented in subsequent tasks.
-  // For now, fall through to Case C so the boundary-validation test passes.
-  return createTree(newFen, { idGen: tree.idGen });
+  const matchedChild = tree.nodes[matchedChildId]!;
+
+  // Case B: FEN mismatch. Trust the adapter.
+  const fenMismatch = matchedChild.fenAfter !== newFen;
+  if (fenMismatch) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[chess-calc] advanceRealGame: FEN mismatch for played SAN "${playedSan}". ` +
+        `Tree expected "${matchedChild.fenAfter}", adapter reported "${newFen}". ` +
+        `Trusting the adapter and overwriting child fenAfter.`,
+    );
+  }
+
+  // Build the new tree:
+  // 1. The matched child becomes the new root (parentId=null, move=null, ply=0).
+  // 2. Its entire subtree survives, with plies decremented by (matchedChild.ply).
+  // 3. Everything else is dropped.
+
+  const decrementBy = matchedChild.ply;
+  const newNodes: Record<NodeId, CalcNode> = {};
+
+  // DFS from matchedChild, collecting all reachable nodes.
+  const stack: NodeId[] = [matchedChildId];
+  const kept = new Set<NodeId>();
+  while (stack.length > 0) {
+    const id = stack.pop()!;
+    if (kept.has(id)) continue;
+    kept.add(id);
+    const n = tree.nodes[id];
+    if (!n) continue;
+    for (const childId of n.children) stack.push(childId);
+  }
+
+  for (const id of kept) {
+    const n = tree.nodes[id]!;
+    if (id === matchedChildId) {
+      newNodes[id] = {
+        ...n,
+        parentId: null,
+        move: null,
+        fenAfter: newFen, // Case A: same as n.fenAfter; Case B: overwritten.
+        ply: 0,
+        children: n.children.filter((c) => kept.has(c)),
+      };
+    } else {
+      newNodes[id] = {
+        ...n,
+        ply: n.ply - decrementBy,
+        children: n.children.filter((c) => kept.has(c)),
+      };
+    }
+  }
+
+  // currentId resolution:
+  // - Preserved if currentId is in the kept set (Case A1).
+  // - Otherwise reset to the new root (Cases A2 and A3).
+  const newCurrentId = kept.has(tree.currentId) ? tree.currentId : matchedChildId;
+
+  return {
+    rootId: matchedChildId,
+    currentId: newCurrentId,
+    nodes: newNodes,
+    idGen: tree.idGen,
+  };
 }
