@@ -133,3 +133,16 @@ export function playMove(tree: CalculationTree, san: SAN): CalculationTree {
     },
   };
 }
+
+/**
+ * Navigate to the node with the given id.
+ *
+ * - If `id === tree.currentId`: returns `tree` reference-identical.
+ * - If `id` is not in `tree.nodes`: returns `tree` reference-identical.
+ * - Otherwise: returns a new tree with `currentId` updated.
+ */
+export function navigateTo(tree: CalculationTree, id: NodeId): CalculationTree {
+  if (id === tree.currentId) return tree;
+  if (!(id in tree.nodes)) return tree;
+  return { ...tree, currentId: id };
+}

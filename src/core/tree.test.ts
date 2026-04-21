@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createTree, getBreadcrumb, getCurrentChildren, getCurrentParentMove, playMove } from './tree';
+import { createTree, getBreadcrumb, getCurrentChildren, getCurrentParentMove, navigateTo, playMove } from './tree';
 import { InvalidFenError, type IdGen, type NodeId } from './types';
 
 const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
@@ -98,5 +98,26 @@ describe('playMove — illegal SAN', () => {
 
     const t2 = playMove(t0, 'gibberish');
     expect(t2).toBe(t0);
+  });
+});
+
+describe('navigateTo', () => {
+  it('updates currentId when the target id exists', () => {
+    const t0 = createTree(START_FEN, { idGen: counterIdGen() });
+    const t1 = playMove(t0, 'e4');
+    const t2 = navigateTo(t1, t1.rootId);
+    expect(t2).not.toBe(t1);
+    expect(t2.currentId).toBe(t1.rootId);
+    expect(t2.nodes).toBe(t1.nodes); // nodes object unchanged, just currentId flipped
+  });
+
+  it('returns the input tree reference-identical when id === currentId', () => {
+    const t0 = createTree(START_FEN, { idGen: counterIdGen() });
+    expect(navigateTo(t0, t0.currentId)).toBe(t0);
+  });
+
+  it('returns the input tree reference-identical when id is unknown', () => {
+    const t0 = createTree(START_FEN, { idGen: counterIdGen() });
+    expect(navigateTo(t0, 'doesnotexist' as NodeId)).toBe(t0);
   });
 });
