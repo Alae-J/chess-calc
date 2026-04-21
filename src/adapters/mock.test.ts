@@ -129,8 +129,8 @@ describe('MockAdapter.play / playOne', () => {
 describe('MockAdapter.reset', () => {
   it('updates current FEN, resets ply, clears queue, does not fire subscribers', () => {
     const a = new MockAdapter();
-    const seen: string[] = [];
-    a.onMove((ev) => seen.push(ev.san));
+    const events: Array<{ san: string; ply: number }> = [];
+    a.onMove((ev) => events.push({ san: ev.san, ply: ev.ply }));
 
     a.script(['e4', 'e5']);
     a.emit('d4'); // ply = 1, not from the queue
@@ -139,15 +139,15 @@ describe('MockAdapter.reset', () => {
     a.reset(differentFen);
 
     expect(a.getCurrentFEN()).toBe(differentFen);
-    // Subsequent emit should produce ply=1 (reset cleared ply)
-    seen.length = 0;
+    // Subsequent emit should produce ply=1 (reset cleared ply back to 0,
+    // so the next emit increments it to 1).
+    events.length = 0;
     a.emit('e4');
-    const last = seen[seen.length - 1];
-    expect(last).toBe('e4');
+    expect(events[events.length - 1]).toEqual({ san: 'e4', ply: 1 });
     // Play the cleared queue — nothing should fire.
-    seen.length = 0;
+    events.length = 0;
     a.play();
-    expect(seen).toEqual([]);
+    expect(events).toEqual([]);
   });
 
   it('throws InvalidFenError on malformed newFen', () => {
