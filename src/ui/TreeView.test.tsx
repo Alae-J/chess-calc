@@ -71,6 +71,39 @@ describe('TreeView', () => {
     ).not.toBeInTheDocument();
   });
 
+  describe('isEntering animation', () => {
+    it('does not animate children that were already present on mount', () => {
+      const store = freshStore();
+      store.getState().playMove('e4');
+      store.getState().navigateUp();
+      store.getState().playMove('d4');
+      store.getState().navigateUp();
+      renderWith(store);
+      // Both cards existed at mount time — neither should animate.
+      const e4 = screen.getByText('e4').closest('button')!;
+      const d4 = screen.getByText('d4').closest('button')!;
+      expect(e4).not.toHaveClass('animate-card-enter');
+      expect(d4).not.toHaveClass('animate-card-enter');
+    });
+
+    it('animates only the newly-appeared child when a new one arrives', () => {
+      const store = freshStore();
+      store.getState().playMove('e4');
+      store.getState().navigateUp();
+      // Mount with just e4 as a child.
+      renderWith(store);
+      // Add a sibling after mount.
+      act(() => {
+        store.getState().playMove('d4');
+        store.getState().navigateUp();
+      });
+      const e4 = screen.getByText('e4').closest('button')!;
+      const d4 = screen.getByText('d4').closest('button')!;
+      expect(e4).not.toHaveClass('animate-card-enter');
+      expect(d4).toHaveClass('animate-card-enter');
+    });
+  });
+
   describe('Case C reset toast', () => {
     beforeEach(() => {
       vi.useFakeTimers();

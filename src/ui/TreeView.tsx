@@ -25,18 +25,43 @@ export function TreeView() {
   const navigateUp = useStore((s) => s.navigateUp);
   const navigateTo = useStore((s) => s.navigateTo);
 
-  // Toast visibility tied to resetVersion bumps.
+  // "Seen" child ids — used to decide which children are newly-appeared
+  // and should play the enter animation. Initialized lazily on first render
+  // with the current children set, so pre-existing children on mount do NOT
+  // animate (they were already there when we arrived).
+  const seenChildIdsRef = useRef<Set<NodeId> | undefined>(undefined);
+  if (seenChildIdsRef.current === undefined) {
+    seenChildIdsRef.current = new Set(children.map((c) => c.id));
+  }
+  // Compute "new this render" ids before we mutate the ref in the effect below.
+  const newChildIds = new Set<NodeId>();
+  for (const c of children) {
+    if (!seenChildIdsRef.current.has(c.id)) newChildIds.add(c.id);
+  }
+
+  // Toast visibility tied to resetVersion bumps. ALSO clears the seen-child
+  // ref on Case C reset so children of the new root get their enter
+  // animation when they appear.
   const [toastVisible, setToastVisible] = useState(false);
   const prevResetVersion = useRef(resetVersion);
   useEffect(() => {
     if (resetVersion !== prevResetVersion.current) {
       prevResetVersion.current = resetVersion;
+      seenChildIdsRef.current = new Set();
       setToastVisible(true);
       const handle = setTimeout(() => setToastVisible(false), TOAST_VISIBLE_MS);
       return () => clearTimeout(handle);
     }
     return undefined;
   }, [resetVersion]);
+
+  // After each render, add the current children to the "seen" set so the
+  // next render's new-child detection skips them.
+  useEffect(() => {
+    if (seenChildIdsRef.current) {
+      for (const c of children) seenChildIdsRef.current.add(c.id);
+    }
+  }, [children]);
 
   // Focus pulse tied to pulseVersion bumps. When playMove matches an existing
   // child, the store bumps pulseVersion and currentId is already set to the
@@ -73,7 +98,7 @@ export function TreeView() {
                 san={child.move ?? ''}
                 variant="child"
                 onClick={() => navigateTo(child.id)}
-                isEntering
+                isEntering={newChildIds.has(child.id)}
                 isFocusPulse={pulsingId === child.id}
               />
             ))}
