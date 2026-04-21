@@ -1,4 +1,5 @@
 import { defineConfig } from 'wxt';
+import { sharedConfig } from './vite.shared';
 
 export default defineConfig({
   modules: ['@wxt-dev/module-react'],
@@ -9,4 +10,5 @@ export default defineConfig({
     permissions: [],
     host_permissions: ['https://lichess.org/*'],
   },
+  vite: () => sharedConfig,
 });
