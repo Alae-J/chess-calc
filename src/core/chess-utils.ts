@@ -65,7 +65,7 @@ export function sanFromMove(
     return null;
   }
   try {
-    const move = chess.move({ from, to, promotion });
+    const move = chess.move(promotion ? { from, to, promotion } : { from, to });
     return move.san;
   } catch {
     return null;

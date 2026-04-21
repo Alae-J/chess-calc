@@ -4,7 +4,7 @@ import type { Api as ChessgroundApi } from 'chessground/api';
 import type { Config as ChessgroundConfig } from 'chessground/config';
 import type { Key } from 'chessground/types';
 import { Chess } from 'chess.js';
-import type { FEN, SAN } from '@/core/types';
+import type { FEN } from '@/core/types';
 
 // chessground CSS themes are imported once via tokens.css.
 
@@ -20,9 +20,11 @@ function computeDests(fen: FEN): Map<Key, Key[]> {
   try {
     const chess = new Chess(fen);
     for (const move of chess.moves({ verbose: true })) {
-      const list = dests.get(move.from as Key) ?? [];
-      list.push(move.to as Key);
-      dests.set(move.from as Key, list);
+      const from: Key = move.from;
+      const to: Key = move.to;
+      const list = dests.get(from) ?? [];
+      list.push(to);
+      dests.set(from, list);
     }
   } catch {
     // Invalid FEN → no legal moves.
@@ -71,7 +73,6 @@ export function Chessground({
       apiRef.current = null;
     };
     // Intentionally empty deps — we want this to run once. Prop updates are handled below.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Apply fen updates.

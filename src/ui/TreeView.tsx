@@ -35,6 +35,7 @@ export function TreeView() {
       const handle = setTimeout(() => setToastVisible(false), TOAST_VISIBLE_MS);
       return () => clearTimeout(handle);
     }
+    return undefined;
   }, [resetVersion]);
 
   // Focus pulse tied to pulseVersion bumps. When playMove matches an existing
@@ -49,6 +50,7 @@ export function TreeView() {
       const handle = setTimeout(() => setPulsingId(null), PULSE_VISIBLE_MS);
       return () => clearTimeout(handle);
     }
+    return undefined;
   }, [pulseVersion, currentId]);
 
   return (

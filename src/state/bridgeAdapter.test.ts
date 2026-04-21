@@ -4,8 +4,6 @@ import { bridgeAdapter } from './bridgeAdapter';
 import { createChessCalcStore } from './store';
 import type { IdGen, NodeId } from '@/core/types';
 
-const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-
 function counterIdGen(prefix = 'n'): IdGen {
   let i = 0;
   return () => (`${prefix}${i++}` as NodeId);
