@@ -94,3 +94,34 @@ describe('MockAdapter.script', () => {
     expect(a.script(['e4'])).toBe(a);
   });
 });
+
+describe('MockAdapter.play / playOne', () => {
+  it('play() fires all queued moves in order and clears the queue', () => {
+    const a = new MockAdapter();
+    const seen: string[] = [];
+    a.onMove((ev) => seen.push(ev.san));
+
+    a.script(['e4', 'e5', 'Nf3']);
+    a.play();
+
+    expect(seen).toEqual(['e4', 'e5', 'Nf3']);
+    // Queue is empty: a second play should fire nothing.
+    a.play();
+    expect(seen).toEqual(['e4', 'e5', 'Nf3']);
+  });
+
+  it('playOne() fires only the next queued move', () => {
+    const a = new MockAdapter();
+    const seen: string[] = [];
+    a.onMove((ev) => seen.push(ev.san));
+
+    a.script(['e4', 'e5']);
+    a.playOne();
+    expect(seen).toEqual(['e4']);
+    a.playOne();
+    expect(seen).toEqual(['e4', 'e5']);
+    // Queue empty — playOne is a no-op.
+    a.playOne();
+    expect(seen).toEqual(['e4', 'e5']);
+  });
+});

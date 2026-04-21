@@ -81,4 +81,20 @@ export class MockAdapter implements BoardAdapter {
     this.queue.push(...moves);
     return this;
   }
+
+  /** Fire all queued moves synchronously, in order. Clears the queue. */
+  play(): void {
+    const toFire = this.queue;
+    this.queue = [];
+    for (const san of toFire) {
+      this.emit(san);
+    }
+  }
+
+  /** Fire only the next queued move, if any. No-op when the queue is empty. */
+  playOne(): void {
+    const next = this.queue.shift();
+    if (next === undefined) return;
+    this.emit(next);
+  }
 }
