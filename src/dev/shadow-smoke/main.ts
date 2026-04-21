@@ -52,8 +52,7 @@ document.getElementById('run-a')!.addEventListener('click', () => {
 });
 
 document.getElementById('run-b')!.addEventListener('click', () => {
-  mountShadow();
-  // Re-mount with a drag-ready config and a visible instruction. When the
+  // Mount with a drag-ready config and a visible instruction. When the
   // user drags e2 pawn to e4 by hand, movable.events.after fires and logs
   // the success. We can't reliably simulate drag via events across shadow-
   // DOM boundaries, so this is a hands-on check — that's fine: the point
