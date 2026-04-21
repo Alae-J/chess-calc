@@ -35,7 +35,10 @@ export class MockAdapter implements BoardAdapter {
     return this.orientation;
   }
 
-  onMove(_cb: (ev: MoveEvent) => void): Unsubscribe {
-    throw new Error('not implemented'); // filled in Task 27
+  onMove(cb: (ev: MoveEvent) => void): Unsubscribe {
+    this.subscribers.add(cb);
+    return () => {
+      this.subscribers.delete(cb);
+    };
   }
 }

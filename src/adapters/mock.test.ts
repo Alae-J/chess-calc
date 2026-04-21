@@ -21,3 +21,14 @@ describe('MockAdapter construction', () => {
     expect(() => new MockAdapter({ startFen: 'junk' })).toThrowError();
   });
 });
+
+describe('MockAdapter subscriptions', () => {
+  it('accepts multiple subscribers and returns an unsubscribe fn', () => {
+    const a = new MockAdapter();
+    const unsub = a.onMove(() => {});
+    expect(typeof unsub).toBe('function');
+    // Calling unsubscribe is idempotent:
+    unsub();
+    expect(() => unsub()).not.toThrow();
+  });
+});
