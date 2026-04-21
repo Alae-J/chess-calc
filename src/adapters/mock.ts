@@ -1,4 +1,4 @@
-import { isValidFen } from '@/core/chess-utils';
+import { applySan, isValidFen } from '@/core/chess-utils';
 import { InvalidFenError, type FEN } from '@/core/types';
 import type { BoardAdapter, MoveEvent, Unsubscribe } from './adapter';
 
@@ -40,5 +40,24 @@ export class MockAdapter implements BoardAdapter {
     return () => {
       this.subscribers.delete(cb);
     };
+  }
+
+  /**
+   * Apply a SAN move, update current FEN + ply, and notify all subscribers.
+   * Throws if the move is illegal from the current FEN.
+   */
+  emit(san: string): void {
+    const after = applySan(this.currentFen, san);
+    if (after === null) {
+      throw new Error(
+        `MockAdapter.emit: illegal move "${san}" from FEN "${this.currentFen}"`,
+      );
+    }
+    this.currentFen = after;
+    this.ply += 1;
+    const ev: MoveEvent = { san, fenAfter: after, ply: this.ply };
+    for (const sub of this.subscribers) {
+      sub(ev);
+    }
   }
 }

@@ -32,3 +32,42 @@ describe('MockAdapter subscriptions', () => {
     expect(() => unsub()).not.toThrow();
   });
 });
+
+describe('MockAdapter.emit', () => {
+  it('fires legal move to all subscribers, updates FEN and ply', () => {
+    const a = new MockAdapter();
+    const seen: string[] = [];
+    a.onMove((ev) => seen.push(`${ev.san}@${ev.ply}`));
+    a.onMove((ev) => seen.push(`B:${ev.san}`));
+
+    a.emit('e4');
+    expect(seen).toEqual(['e4@1', 'B:e4']);
+    expect(a.getCurrentFEN()).toBe(
+      'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1',
+    );
+  });
+
+  it('emits increment ply monotonically', () => {
+    const a = new MockAdapter();
+    const plies: number[] = [];
+    a.onMove((ev) => plies.push(ev.ply));
+    a.emit('e4');
+    a.emit('e5');
+    a.emit('Nf3');
+    expect(plies).toEqual([1, 2, 3]);
+  });
+
+  it('throws on illegal emit', () => {
+    const a = new MockAdapter();
+    expect(() => a.emit('Ke2')).toThrow();
+  });
+
+  it('does not notify an unsubscribed subscriber', () => {
+    const a = new MockAdapter();
+    const seen: string[] = [];
+    const unsub = a.onMove((ev) => seen.push(ev.san));
+    unsub();
+    a.emit('e4');
+    expect(seen).toEqual([]);
+  });
+});
