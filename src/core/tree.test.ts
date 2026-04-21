@@ -52,6 +52,15 @@ describe('read helpers (on a root-only tree)', () => {
     const tree = createTree(START_FEN, { idGen: counterIdGen() });
     expect(getBreadcrumb(tree)).toEqual([]);
   });
+
+  it('getBreadcrumb returns the SAN path from root to current', () => {
+    const t0 = createTree(START_FEN, { idGen: counterIdGen() });
+    const t1 = playMove(t0, 'e4');
+    const t2 = playMove(t1, 'e5');
+    expect(getBreadcrumb(t2)).toEqual(['e4', 'e5']);
+    // One level deep
+    expect(getBreadcrumb(t1)).toEqual(['e4']);
+  });
 });
 
 describe('playMove — new child', () => {

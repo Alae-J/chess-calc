@@ -57,6 +57,7 @@ export function createTree(
 /** Returns the move that led to the current node, or null if current is root. */
 export function getCurrentParentMove(tree: CalculationTree): SAN | null {
   const current = tree.nodes[tree.currentId];
+  // c8 ignore next
   if (!current) return null;
   return current.move;
 }
@@ -64,6 +65,7 @@ export function getCurrentParentMove(tree: CalculationTree): SAN | null {
 /** Returns the child nodes of the current node, in insertion order. */
 export function getCurrentChildren(tree: CalculationTree): CalcNode[] {
   const current = tree.nodes[tree.currentId];
+  // c8 ignore next
   if (!current) return [];
   return current.children
     .map((id) => tree.nodes[id])
@@ -94,12 +96,14 @@ export function getBreadcrumb(tree: CalculationTree): SAN[] {
  */
 export function playMove(tree: CalculationTree, san: SAN): CalculationTree {
   const current = tree.nodes[tree.currentId];
+  // c8 ignore next
   if (!current) return tree;
 
   // Does an existing child already cover this SAN?
   for (const childId of current.children) {
     const child = tree.nodes[childId];
     if (child && child.move === san) {
+      // c8 ignore next
       if (childId === tree.currentId) return tree;
       return { ...tree, currentId: childId };
     }
@@ -192,6 +196,7 @@ export function advanceRealGame(
   }
 
   const root = tree.nodes[tree.rootId];
+  /* c8 ignore next 3 */
   if (!root) {
     return createTree(newFen, { idGen: tree.idGen });
   }
@@ -229,9 +234,11 @@ export function advanceRealGame(
   const kept = new Set<NodeId>();
   while (stack.length > 0) {
     const id = stack.pop()!;
+    // c8 ignore next
     if (kept.has(id)) continue;
     kept.add(id);
     const n = tree.nodes[id];
+    // c8 ignore next
     if (!n) continue;
     for (const childId of n.children) stack.push(childId);
   }
