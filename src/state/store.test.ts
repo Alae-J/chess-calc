@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createChessCalcStore } from './store';
 import type { IdGen, NodeId } from '@/core/types';
 
@@ -130,8 +130,6 @@ describe('store.navigateUp', () => {
     expect(store.getState().tree).toBe(before);
   });
 });
-
-import { vi } from 'vitest';
 
 describe('store.setOrientation', () => {
   it('updates orientation', () => {

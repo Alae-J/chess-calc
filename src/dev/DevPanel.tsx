@@ -14,6 +14,10 @@ export function DevPanel({
 }) {
   const [sanInput, setSanInput] = useState('');
   const [scriptInput, setScriptInput] = useState('');
+  // Dev-only re-render trigger; do NOT use this pattern in production
+  // components. It assumes adapter.onMove is the only thing that can change
+  // what we display, which happens to be true for MockAdapter but would be
+  // wrong for a real adapter whose state can change via other paths.
   const [tick, setTick] = useState(0);
 
   // Re-render on adapter state changes so the status line stays current.
