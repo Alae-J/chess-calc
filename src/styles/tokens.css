@@ -1,0 +1,71 @@
+/*
+ * Design tokens for Chess Calc.
+ *
+ * Exact palette is placeholder — finalize against UI references during
+ * implementation. Architecture is fixed: dark default, prefers-color-scheme
+ * light override, all surface values consumed via var() from components.
+ */
+
+:root {
+  --bg: #0b0d0f;
+  --surface: #14171a;
+  --surface-elevated: #1b1f23;
+  --border: rgba(255, 255, 255, 0.08);
+  --text: #e6e8ea;
+  --text-muted: #9aa0a6;
+  --accent: #4c9aff;
+
+  --radius-card: 8px;
+  --radius-overlay: 12px;
+
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --duration-enter: 150ms;
+  --duration-pulse: 120ms;
+  --duration-popover: 120ms;
+  --duration-board: 250ms;
+  --duration-caseb-pulse: 800ms;
+  --duration-toast-fade: 150ms;
+  --duration-toast-hold: 3000ms;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f7f8f9;
+    --surface: #ffffff;
+    --surface-elevated: #ffffff;
+    --border: rgba(0, 0, 0, 0.08);
+    --text: #17191c;
+    --text-muted: #5a6068;
+    --accent: #1f6feb;
+  }
+}
+
+/*
+ * Case B board-border accent pulse.
+ * Kept in vanilla CSS (not Tailwind keyframes) because box-shadow animation
+ * with CSS var'd color is cleaner here than through Tailwind's keyframes.
+ */
+@keyframes caseb-pulse {
+  0% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+  25%, 75% {
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+.caseb-pulse {
+  animation: caseb-pulse var(--duration-caseb-pulse) ease-in-out;
+}
+
+/*
+ * Tailwind directives. Kept at the bottom so any real CSS `@import`
+ * statements added later (e.g., chessground theme imports in Task 16)
+ * can go at the top per CSS spec.
+ */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
