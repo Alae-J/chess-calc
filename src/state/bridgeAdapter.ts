@@ -10,7 +10,11 @@ export type Dispose = () => void;
  * - Subscribes to adapter.onMove and translates each MoveEvent into
  *   store.advanceRealGame(san, fenAfter). `ply` is discarded — the tree
  *   tracks its own ply.
- * - Returns a dispose that unsubscribes and calls adapter.dispose?.().
+ * - If adapter.onReset is present (Phase 3+ adapters), subscribes and routes
+ *   ResetEvent into store.resetFromFen(fenAfter). MockAdapter omits this;
+ *   bridgeAdapter tolerates the absence.
+ * - Returns a dispose that unsubscribes all subscriptions and calls
+ *   adapter.dispose?.().
  *
  * This is the single designated cross-layer file (adapters ↔ state). UI
  * never imports this module.
@@ -18,12 +22,17 @@ export type Dispose = () => void;
 export function bridgeAdapter(adapter: BoardAdapter, store: ChessCalcStore): Dispose {
   store.getState().setOrientation(adapter.getOrientation());
 
-  const unsub = adapter.onMove((ev) => {
+  const unsubMove = adapter.onMove((ev) => {
     store.getState().advanceRealGame(ev.san, ev.fenAfter);
   });
 
+  const unsubReset = adapter.onReset?.((ev) => {
+    store.getState().resetFromFen(ev.fenAfter);
+  });
+
   return () => {
-    unsub();
+    unsubMove();
+    unsubReset?.();
     adapter.dispose?.();
   };
 }
