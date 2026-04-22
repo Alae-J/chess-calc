@@ -27,6 +27,7 @@ export interface ChessCalcState {
   navigateUp: () => void;
   advanceRealGame: (playedSan: SAN, newFen: FEN) => void;
   setOrientation: (o: 'white' | 'black') => void;
+  resetFromFen: (fen: FEN) => void;
 }
 
 export interface CreateStoreOptions {
@@ -104,6 +105,15 @@ export function createChessCalcStore(opts: CreateStoreOptions): ChessCalcStore {
 
     setOrientation: (o) => {
       if (o !== get().orientation) set({ orientation: o });
+    },
+
+    resetFromFen: (fen) => {
+      const state = get();
+      const freshTree = createTree(fen, { idGen: state.tree.idGen });
+      set({
+        tree: freshTree,
+        resetVersion: state.resetVersion + 1,
+      });
     },
   }));
 }

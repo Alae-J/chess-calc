@@ -204,3 +204,49 @@ describe('store.advanceRealGame', () => {
     expect(Object.keys(store.getState().tree.nodes)).toHaveLength(1);
   });
 });
+
+describe('resetFromFen', () => {
+  const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+  const AFTER_E4 = 'rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1';
+
+  it('replaces the tree with a fresh root at the given FEN', () => {
+    const store = createChessCalcStore({
+      initialFen: START_FEN,
+      orientation: 'white',
+      idGen: counterIdGen(),
+    });
+    store.getState().playMove('e4');
+    store.getState().playMove('e5');
+    const beforeTreeRef = store.getState().tree;
+
+    store.getState().resetFromFen(AFTER_E4);
+
+    const after = store.getState().tree;
+    expect(after).not.toBe(beforeTreeRef);
+    expect(after.rootId).toBe(after.currentId);
+    expect(after.nodes[after.rootId]!.fenAfter).toBe(AFTER_E4);
+    expect(Object.keys(after.nodes)).toHaveLength(1);
+  });
+
+  it('increments resetVersion', () => {
+    const store = createChessCalcStore({
+      initialFen: START_FEN,
+      orientation: 'white',
+      idGen: counterIdGen(),
+    });
+    const before = store.getState().resetVersion;
+    store.getState().resetFromFen(AFTER_E4);
+    expect(store.getState().resetVersion).toBe(before + 1);
+  });
+
+  it('preserves the idGen across reset', () => {
+    const store = createChessCalcStore({
+      initialFen: START_FEN,
+      orientation: 'white',
+      idGen: counterIdGen('p'),
+    });
+    store.getState().resetFromFen(AFTER_E4);
+    const newRootId = store.getState().tree.rootId;
+    expect(newRootId.startsWith('p')).toBe(true);
+  });
+});
