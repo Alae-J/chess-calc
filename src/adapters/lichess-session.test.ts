@@ -395,7 +395,13 @@ describe('defaultReadinessCheck', () => {
 
   it('returns { kind: "unsupported-variant" } for a Crazyhouse game (synthesized)', () => {
     const doc = new DOMParser().parseFromString(
-      '<!DOCTYPE html><html><body><div class="round__app variant-crazyhouse"><rm6><l4x></l4x></rm6></div></body></html>',
+      '<!DOCTYPE html><html><body>' +
+        '<div class="round__app variant-crazyhouse">' +
+          '<div class="cg-wrap orientation-white"></div>' +
+          '<rm6><l4x></l4x></rm6>' +
+        '</div>' +
+        '<input class="mchat__say">' +
+      '</body></html>',
       'text/html',
     );
     const result = defaultReadinessCheck(doc);
