@@ -134,6 +134,22 @@ describe('SessionController', () => {
     expect(events.start).not.toHaveBeenCalled();
   });
 
+  it('unsupported-variant result does not emit start and logs a warning', () => {
+    readinessCheck.mockReturnValue({ kind: 'unsupported-variant', name: 'crazyhouse' });
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    ctrl = new SessionController({
+      urlMatcher: (href) => GAME_URL_RE.test(href),
+      readinessCheck,
+    });
+    setUrl('/abc12345');
+    disposable = ctrl.activate(events);
+    vi.advanceTimersByTime(150);
+    expect(events.start).not.toHaveBeenCalled();
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(warnSpy.mock.calls[0]![0]).toMatch(/crazyhouse/);
+    warnSpy.mockRestore();
+  });
+
   it('URL change to a different game stops the old session and starts the new', () => {
     readinessCheck.mockImplementation(() => {
       const path = window.location.pathname;
