@@ -1,7 +1,22 @@
 // @vitest-environment jsdom
 // @vitest-environment-options { "url": "https://lichess.org/" }
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { SessionController, GAME_URL_RE, type SessionStartContext } from './lichess-session';
+import {
+  SessionController,
+  GAME_URL_RE,
+  parseOrientation,
+  parseParticipant,
+  type SessionStartContext,
+} from './lichess-session';
+
+function loadFixture(name: string): Document {
+  const path = resolve(__dirname, '__fixtures__', name);
+  const html = readFileSync(path, 'utf8');
+  const parser = new DOMParser();
+  return parser.parseFromString(`<!DOCTYPE html><html><body>${html}</body></html>`, 'text/html');
+}
 
 const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 const mkCtx = (gameId: string): SessionStartContext => ({
@@ -184,5 +199,48 @@ describe('SessionController', () => {
       d.dispose();
       d.dispose();
     }).not.toThrow();
+  });
+});
+
+describe('parseParticipant', () => {
+  it('returns "black" for a game where the user plays Black', () => {
+    const doc = loadFixture('game-standard-midgame.html');
+    expect(parseParticipant(doc)).toBe('black');
+  });
+
+  it('returns "white" for a game where the user plays White', () => {
+    const doc = loadFixture('game-standard-user-white.html');
+    expect(parseParticipant(doc)).toBe('white');
+  });
+
+  it('returns "spectator" for a game where the chat input is absent', () => {
+    const doc = loadFixture('game-standard-spectator.html');
+    expect(parseParticipant(doc)).toBe('spectator');
+  });
+
+  it('returns "spectator" when the orientation host is missing but chat input is present', () => {
+    // Synthesized edge case: chat input without a .cg-wrap element.
+    const doc = new DOMParser().parseFromString(
+      `<!DOCTYPE html><html><body><input class="mchat__say"></body></html>`,
+      'text/html',
+    );
+    expect(parseParticipant(doc)).toBe('spectator');
+  });
+});
+
+describe('parseOrientation', () => {
+  it('returns "black" for orientation-black', () => {
+    const doc = loadFixture('game-standard-midgame.html');
+    expect(parseOrientation(doc)).toBe('black');
+  });
+
+  it('returns "white" for orientation-white', () => {
+    const doc = loadFixture('game-standard-user-white.html');
+    expect(parseOrientation(doc)).toBe('white');
+  });
+
+  it('returns null when no orientation host is present', () => {
+    const emptyDoc = new DOMParser().parseFromString('<html><body></body></html>', 'text/html');
+    expect(parseOrientation(emptyDoc)).toBeNull();
   });
 });

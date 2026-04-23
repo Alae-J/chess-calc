@@ -1,4 +1,10 @@
 import type { FEN, SAN } from '@/core/types';
+import {
+  ORIENTATION_BLACK_CLASS,
+  ORIENTATION_HOST_SEL,
+  ORIENTATION_WHITE_CLASS,
+  PARTICIPANT_MARKER_SEL,
+} from './lichess-dom';
 
 /** Canonical Lichess live-game URL regex. */
 export const GAME_URL_RE =
@@ -184,4 +190,30 @@ export class SessionController {
 
 function isPromise<T>(value: T | Promise<T>): value is Promise<T> {
   return typeof (value as { then?: unknown } | undefined)?.then === 'function';
+}
+
+/**
+ * Detect whether the viewer is a participant in the current game, and if
+ * so which color. Returns 'spectator' when the chat input is absent (the
+ * participant marker; see lichess-dom.ts for rationale) or when the board
+ * orientation cannot be read.
+ *
+ * Implementation: on Lichess the user is always the bottom player in
+ * their own games, and the .cg-wrap element carries an orientation class
+ * reflecting board orientation — which matches the user's color.
+ */
+export function parseParticipant(doc: Document): 'white' | 'black' | 'spectator' {
+  if (!doc.querySelector(PARTICIPANT_MARKER_SEL)) return 'spectator';
+  const orientation = parseOrientation(doc);
+  if (orientation === null) return 'spectator';
+  return orientation;
+}
+
+/** Read orientation from the observed host element's class list. */
+export function parseOrientation(doc: Document): 'white' | 'black' | null {
+  const host = doc.querySelector(ORIENTATION_HOST_SEL);
+  if (!host) return null;
+  if (host.classList.contains(ORIENTATION_WHITE_CLASS)) return 'white';
+  if (host.classList.contains(ORIENTATION_BLACK_CLASS)) return 'black';
+  return null;
 }

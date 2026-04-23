@@ -50,12 +50,15 @@ fixture stale?" in five seconds.
 | Fixture | Consumed by test | Required DOM elements/attributes |
 |---|---|---|
 | `game-standard-midgame.html` | lichess-session: participant detection, orientation, move-history replay | `.round__app.variant-standard`, `.mchat__say` (participant), `.cg-wrap.orientation-black` (user is Black in this fixture), `l4x > kwdb` ≥ 5, no `.result-wrap` |
+| `game-standard-user-white.html` | lichess-session: participant detection for orientation-white | `.round__app.variant-standard`, `.mchat__say` (participant), `.cg-wrap.orientation-white`, `l4x > kwdb >= 4`, no `.result-wrap` |
 | `game-standard-spectator.html` | lichess-session: spectator detection | `.round__app.variant-standard`, **no `.mchat__say`**, `.ruser-bottom` + `.ruser-top` present |
 | `game-standard-gameover.html` | lichess: game-over detection | `l4x .result-wrap` present, all other structure same as midgame |
 
-**Note on synthesized fixtures:** `game-standard-spectator.html` is
-synthesized from the participant HTML by removing the `.mchat__say` input.
-When a real spectator-view capture is available, replace it and this note.
+**Note on synthesized fixtures:** `game-standard-spectator.html` and
+`game-standard-user-white.html` are synthesized from the participant HTML
+by removing the `.mchat__say` input and flipping the orientation class
+respectively. When a real capture of each scenario is available, replace
+them and this note.
 
 Entries here are appended by the task that introduces each fixture. The
 table must stay in sync with the actual files — a future task that adds
