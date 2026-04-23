@@ -17,6 +17,7 @@ import {
   STANDARD_START_FEN,
   type SessionStartContext,
 } from './lichess-session';
+import { LichessDomContractError } from './lichess-errors';
 
 function loadFixture(name: string): Document {
   const path = resolve(__dirname, '__fixtures__', name);
@@ -436,6 +437,23 @@ describe('defaultReadinessCheck', () => {
     if (result.kind !== 'participant') return;
     expect(result.ctx.orientation).toBe('white');
     expect(result.ctx.moveHistory).toEqual(['e4', 'c5', 'Nf3', 'd6']);
+  });
+
+  it('throws LichessDomContractError when the move list contains an unapplicable SAN', () => {
+    // Synthesize a DOM that passes all checks except replay: standard variant,
+    // participant, orientation, standard start FEN, but <kwdb> contains a bogus SAN
+    // that chess.js rejects.
+    const doc = new DOMParser().parseFromString(
+      '<!DOCTYPE html><html><body>' +
+      '<div class="round__app variant-standard">' +
+        '<div class="cg-wrap orientation-white"></div>' +
+        '<rm6><l4x><i5z>1</i5z><kwdb>Xxe4</kwdb></l4x></rm6>' +
+      '</div>' +
+      '<input class="mchat__say">' +
+      '</body></html>',
+      'text/html',
+    );
+    expect(() => defaultReadinessCheck(doc)).toThrow(LichessDomContractError);
   });
 });
 
