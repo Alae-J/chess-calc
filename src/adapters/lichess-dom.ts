@@ -40,7 +40,10 @@ export const PLAYER_TOP_SEL = '.ruser-top';
  */
 export const PARTICIPANT_MARKER_SEL = '.mchat__say';
 
-/** Host element whose class list carries the orientation class. */
+/**
+ * Host element whose class list carries the orientation class.
+ * Expected to be unique per page on live-game URLs.
+ */
 export const ORIENTATION_HOST_SEL = '.cg-wrap';
 export const ORIENTATION_WHITE_CLASS = 'orientation-white';
 export const ORIENTATION_BLACK_CLASS = 'orientation-black';
