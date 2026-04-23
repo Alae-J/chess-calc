@@ -14,6 +14,7 @@ export default defineConfig({
     environmentMatchGlobs: [
       ['src/ui/**/*.test.{ts,tsx}', 'jsdom'],
       ['src/state/**/*.test.ts', 'jsdom'],
+      ['src/adapters/lichess*.test.ts', 'jsdom'],
     ],
     setupFiles: ['./src/test-setup.ts'],
     coverage: {
