@@ -201,6 +201,13 @@ function isPromise<T>(value: T | Promise<T>): value is Promise<T> {
  * Implementation: on Lichess the user is always the bottom player in
  * their own games, and the .cg-wrap element carries an orientation class
  * reflecting board orientation — which matches the user's color.
+ *
+ * **Known limitation:** Lichess's flip-board button swaps the orientation
+ * class on `.cg-wrap` without changing the user's actual color, so after
+ * a flip this helper reports the flipped color. Deferred to post-v0; a
+ * correct fix requires a second signal (e.g. matching the bottom player's
+ * username against the session user's username, or parsing the "Playing
+ * as White" indicator when available).
  */
 export function parseParticipant(doc: Document): 'white' | 'black' | 'spectator' {
   if (!doc.querySelector(PARTICIPANT_MARKER_SEL)) return 'spectator';
