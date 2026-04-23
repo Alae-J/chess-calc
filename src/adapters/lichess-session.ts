@@ -1,9 +1,13 @@
 import type { FEN, SAN } from '@/core/types';
 import {
+  GAME_CONTAINER_SEL,
+  MOVE_CELL_SEL,
   ORIENTATION_BLACK_CLASS,
   ORIENTATION_HOST_SEL,
   ORIENTATION_WHITE_CLASS,
   PARTICIPANT_MARKER_SEL,
+  SUPPORTED_VARIANTS,
+  VARIANT_CLASS_PREFIX,
 } from './lichess-dom';
 
 /** Canonical Lichess live-game URL regex. */
@@ -223,4 +227,60 @@ export function parseOrientation(doc: Document): 'white' | 'black' | null {
   if (host.classList.contains(ORIENTATION_WHITE_CLASS)) return 'white';
   if (host.classList.contains(ORIENTATION_BLACK_CLASS)) return 'black';
   return null;
+}
+
+/** Standard chess starting position in FEN. */
+export const STANDARD_START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+
+/**
+ * Extract move history from the move-list DOM in ply order.
+ * Each `<kwdb>` cell contributes one SAN string; interleaved `<i5z>` move
+ * numbers are ignored by the selector. Empty-text cells are filtered.
+ */
+export function parseMoveHistory(doc: Document): readonly SAN[] {
+  const cells = Array.from(doc.querySelectorAll(MOVE_CELL_SEL));
+  return cells
+    .map((cell) => cell.textContent?.trim() ?? '')
+    .filter((san) => san.length > 0);
+}
+
+/**
+ * Read the variant name from `.round__app`'s classList. Lichess encodes the
+ * variant as a `variant-<name>` class (e.g. `variant-standard`,
+ * `variant-chess960`). Defaults to `"standard"` when the container is
+ * missing or no `variant-*` class is present.
+ */
+export function parseVariant(doc: Document): string {
+  const container = doc.querySelector(GAME_CONTAINER_SEL);
+  if (!container) return 'standard';
+  for (const cls of container.classList) {
+    if (cls.startsWith(VARIANT_CLASS_PREFIX)) {
+      return cls.slice(VARIANT_CLASS_PREFIX.length);
+    }
+  }
+  return 'standard';
+}
+
+/**
+ * Read the starting FEN for the game.
+ *
+ * Phase 3 limitation: Lichess does not expose an observed `data-fen`-style
+ * attribute on the pages we have captured, so we can only return the
+ * standard start FEN for standard-variant games. For Chess960 and
+ * From-Position games, we'd need a real capture with the starting FEN
+ * exposed before we can populate this. Returns `null` for non-standard
+ * variants; the adapter's reconciliation step will fail loud on such games,
+ * which is acceptable until variant captures are available.
+ */
+export function parseStartingFen(doc: Document): FEN | null {
+  const container = doc.querySelector(GAME_CONTAINER_SEL);
+  if (!container) return null;
+  const variant = parseVariant(doc);
+  if (variant === 'standard') return STANDARD_START_FEN;
+  return null;
+}
+
+/** Checks whether the variant is in `SUPPORTED_VARIANTS`. */
+export function isSupportedVariant(variant: string): boolean {
+  return (SUPPORTED_VARIANTS as readonly string[]).includes(variant);
 }

@@ -8,6 +8,11 @@ import {
   GAME_URL_RE,
   parseOrientation,
   parseParticipant,
+  parseMoveHistory,
+  parseStartingFen,
+  parseVariant,
+  isSupportedVariant,
+  STANDARD_START_FEN,
   type SessionStartContext,
 } from './lichess-session';
 
@@ -250,5 +255,117 @@ describe('parseOrientation', () => {
       'text/html',
     );
     expect(parseOrientation(doc)).toBeNull();
+  });
+});
+
+describe('parseMoveHistory', () => {
+  it('returns [] when the move list is empty', () => {
+    const doc = new DOMParser().parseFromString(
+      '<!DOCTYPE html><html><body><div class="round__app"><rm6><l4x></l4x></rm6></div></body></html>',
+      'text/html',
+    );
+    expect(parseMoveHistory(doc)).toEqual([]);
+  });
+
+  it('returns [] when the move list is missing entirely', () => {
+    const doc = new DOMParser().parseFromString(
+      '<!DOCTYPE html><html><body></body></html>',
+      'text/html',
+    );
+    expect(parseMoveHistory(doc)).toEqual([]);
+  });
+
+  it('returns the ordered SAN sequence from a midgame fixture', () => {
+    const doc = loadFixture('game-standard-midgame.html');
+    const history = parseMoveHistory(doc);
+    // Midgame fixture has 10 plies: 1. e4 c5 2. Bc4 e6 3. Bb3 Nf6 4. d3 d6 5. Nf3 g6
+    expect(history).toEqual(['e4', 'c5', 'Bc4', 'e6', 'Bb3', 'Nf6', 'd3', 'd6', 'Nf3', 'g6']);
+  });
+
+  it('ignores <i5z> move-number cells when extracting SAN', () => {
+    const doc = new DOMParser().parseFromString(
+      '<!DOCTYPE html><html><body><div class="round__app"><rm6><l4x>' +
+        '<i5z>1</i5z><kwdb>e4</kwdb><kwdb>e5</kwdb>' +
+        '<i5z>2</i5z><kwdb>Nf3</kwdb>' +
+      '</l4x></rm6></div></body></html>',
+      'text/html',
+    );
+    expect(parseMoveHistory(doc)).toEqual(['e4', 'e5', 'Nf3']);
+  });
+});
+
+describe('parseVariant', () => {
+  it('returns "standard" for a standard-variant game', () => {
+    const doc = loadFixture('game-standard-midgame.html');
+    expect(parseVariant(doc)).toBe('standard');
+  });
+
+  it('returns "chess960" when .round__app has the variant-chess960 class', () => {
+    const doc = new DOMParser().parseFromString(
+      '<!DOCTYPE html><html><body><div class="round__app variant-chess960"></div></body></html>',
+      'text/html',
+    );
+    expect(parseVariant(doc)).toBe('chess960');
+  });
+
+  it('returns "crazyhouse" when .round__app has the variant-crazyhouse class', () => {
+    const doc = new DOMParser().parseFromString(
+      '<!DOCTYPE html><html><body><div class="round__app variant-crazyhouse"></div></body></html>',
+      'text/html',
+    );
+    expect(parseVariant(doc)).toBe('crazyhouse');
+  });
+
+  it('defaults to "standard" when no variant class is present on .round__app', () => {
+    const doc = new DOMParser().parseFromString(
+      '<!DOCTYPE html><html><body><div class="round__app"></div></body></html>',
+      'text/html',
+    );
+    expect(parseVariant(doc)).toBe('standard');
+  });
+
+  it('defaults to "standard" when .round__app is missing entirely', () => {
+    const doc = new DOMParser().parseFromString(
+      '<!DOCTYPE html><html><body></body></html>',
+      'text/html',
+    );
+    expect(parseVariant(doc)).toBe('standard');
+  });
+});
+
+describe('parseStartingFen', () => {
+  it('returns STANDARD_START_FEN on a standard-variant game', () => {
+    const doc = loadFixture('game-standard-midgame.html');
+    expect(parseStartingFen(doc)).toBe(STANDARD_START_FEN);
+  });
+
+  it('returns null on a Chess960 game (limitation — no data-fen observed)', () => {
+    const doc = new DOMParser().parseFromString(
+      '<!DOCTYPE html><html><body><div class="round__app variant-chess960"></div></body></html>',
+      'text/html',
+    );
+    expect(parseStartingFen(doc)).toBeNull();
+  });
+
+  it('returns null when .round__app is missing', () => {
+    const doc = new DOMParser().parseFromString(
+      '<!DOCTYPE html><html><body></body></html>',
+      'text/html',
+    );
+    expect(parseStartingFen(doc)).toBeNull();
+  });
+});
+
+describe('isSupportedVariant', () => {
+  it('returns true for standard, chess960, fromPosition', () => {
+    expect(isSupportedVariant('standard')).toBe(true);
+    expect(isSupportedVariant('chess960')).toBe(true);
+    expect(isSupportedVariant('fromPosition')).toBe(true);
+  });
+
+  it('returns false for unsupported variants', () => {
+    expect(isSupportedVariant('crazyhouse')).toBe(false);
+    expect(isSupportedVariant('horde')).toBe(false);
+    expect(isSupportedVariant('')).toBe(false);
   });
 });
