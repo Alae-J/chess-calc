@@ -6,17 +6,13 @@ import type {
   ResetEvent,
   Unsubscribe,
 } from './adapter';
+import { LichessDomContractError } from './lichess-errors';
 import type { SessionStartContext } from './lichess-session';
 
 /** Debounce window for takeback detection (see spec §9.5). */
 export const TAKEBACK_DEBOUNCE_MS = 150;
 
-export class LichessDomContractError extends Error {
-  constructor(public readonly selector: string, message?: string) {
-    super(message ?? `Lichess DOM contract violation at selector: ${selector}`);
-    this.name = 'LichessDomContractError';
-  }
-}
+export { LichessDomContractError } from './lichess-errors';
 
 export class LichessAdapter implements BoardAdapter {
   private currentFen: FEN;

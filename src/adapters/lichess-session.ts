@@ -11,7 +11,7 @@ import {
   SUPPORTED_VARIANTS,
   VARIANT_CLASS_PREFIX,
 } from './lichess-dom';
-import { LichessDomContractError } from './lichess';
+import { LichessDomContractError } from './lichess-errors';
 
 /** Canonical Lichess live-game URL regex. */
 export const GAME_URL_RE =
