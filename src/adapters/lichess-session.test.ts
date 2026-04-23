@@ -156,6 +156,7 @@ describe('SessionController', () => {
   });
 
   it('dispose is idempotent', () => {
+    readinessCheck.mockReturnValue({ kind: 'not-ready' });
     ctrl = new SessionController({
       urlMatcher: (href) => GAME_URL_RE.test(href),
       readinessCheck,

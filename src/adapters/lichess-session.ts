@@ -140,11 +140,6 @@ export class SessionController {
     deadline: number,
   ): void {
     if (this.disposed || token !== this.currentToken) return;
-    if (!result) {
-      // Defensive: a readinessCheck stub that returns undefined/null is treated as no-op.
-      this.state = 'off';
-      return;
-    }
     switch (result.kind) {
       case 'participant':
         this.state = 'active';
