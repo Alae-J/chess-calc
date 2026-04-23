@@ -122,8 +122,14 @@ export class SessionController {
       if (this.disposed || token !== this.currentToken) return;
       const result = this.readinessCheck(document);
       if (isPromise(result)) {
-        result.then((r) => this.onReadiness(token, r, events, attempt, deadline)).catch(() => {
-          if (token === this.currentToken) this.state = 'refused';
+        result.then((r) => this.onReadiness(token, r, events, attempt, deadline)).catch((err: unknown) => {
+          if (token !== this.currentToken) return;
+          this.state = 'refused';
+          // eslint-disable-next-line no-console
+          console.warn(
+            `[chess-calc] SessionController: readinessCheck rejected for ${window.location.href}`,
+            err,
+          );
         });
       } else {
         this.onReadiness(token, result, events, attempt, deadline);
