@@ -243,4 +243,12 @@ describe('parseOrientation', () => {
     const emptyDoc = new DOMParser().parseFromString('<html><body></body></html>', 'text/html');
     expect(parseOrientation(emptyDoc)).toBeNull();
   });
+
+  it('returns null when the host has neither orientation class', () => {
+    const doc = new DOMParser().parseFromString(
+      '<!DOCTYPE html><html><body><div class="cg-wrap manipulable"></div></body></html>',
+      'text/html',
+    );
+    expect(parseOrientation(doc)).toBeNull();
+  });
 });
