@@ -369,3 +369,95 @@ describe('isSupportedVariant', () => {
     expect(isSupportedVariant('')).toBe(false);
   });
 });
+
+import { Chess } from 'chess.js';
+import { defaultReadinessCheck } from './lichess-session';
+
+describe('defaultReadinessCheck', () => {
+  it('returns { kind: "participant" } with replay-derived currentFen for a midgame fixture', () => {
+    const doc = loadFixture('game-standard-midgame.html');
+    const result = defaultReadinessCheck(doc);
+    expect(result.kind).toBe('participant');
+    if (result.kind !== 'participant') return;
+    expect(result.ctx.initialFen).toBe(STANDARD_START_FEN);
+    // Replay history to reconstruct expected FEN — should match ctx.currentFen.
+    const chess = new Chess(result.ctx.initialFen);
+    for (const san of result.ctx.moveHistory) chess.move(san);
+    expect(result.ctx.currentFen).toBe(chess.fen());
+    expect(result.ctx.orientation).toBe('black');
+    expect(result.ctx.moveHistory).toEqual(['e4', 'c5', 'Bc4', 'e6', 'Bb3', 'Nf6', 'd3', 'd6', 'Nf3', 'g6']);
+  });
+
+  it('returns { kind: "spectator" } for a spectator fixture', () => {
+    const doc = loadFixture('game-standard-spectator.html');
+    const result = defaultReadinessCheck(doc);
+    expect(result.kind).toBe('spectator');
+  });
+
+  it('returns { kind: "unsupported-variant" } for a Crazyhouse game (synthesized)', () => {
+    const doc = new DOMParser().parseFromString(
+      '<!DOCTYPE html><html><body><div class="round__app variant-crazyhouse"><rm6><l4x></l4x></rm6></div></body></html>',
+      'text/html',
+    );
+    const result = defaultReadinessCheck(doc);
+    expect(result.kind).toBe('unsupported-variant');
+    if (result.kind !== 'unsupported-variant') return;
+    expect(result.name).toBe('crazyhouse');
+  });
+
+  it('returns { kind: "not-ready" } when the game container is missing', () => {
+    const doc = new DOMParser().parseFromString(
+      '<!DOCTYPE html><html><body></body></html>',
+      'text/html',
+    );
+    const result = defaultReadinessCheck(doc);
+    expect(result.kind).toBe('not-ready');
+  });
+
+  it('returns { kind: "not-ready" } for a Chess960 game (starting FEN not implemented in Phase 3)', () => {
+    // parseStartingFen returns null for non-standard variants; defaultReadinessCheck falls through to not-ready.
+    const doc = new DOMParser().parseFromString(
+      '<!DOCTYPE html><html><body><div class="round__app variant-chess960"><rm6><l4x></l4x></rm6><div class="cg-wrap orientation-white"></div><input class="mchat__say"></div></body></html>',
+      'text/html',
+    );
+    const result = defaultReadinessCheck(doc);
+    expect(result.kind).toBe('not-ready');
+  });
+
+  it('returns participant context for the user-white fixture', () => {
+    const doc = loadFixture('game-standard-user-white.html');
+    const result = defaultReadinessCheck(doc);
+    expect(result.kind).toBe('participant');
+    if (result.kind !== 'participant') return;
+    expect(result.ctx.orientation).toBe('white');
+    expect(result.ctx.moveHistory).toEqual(['e4', 'c5', 'Nf3', 'd6']);
+  });
+});
+
+describe('SessionController integration with defaultReadinessCheck', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    history.replaceState(null, '', '/');
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('DOM-readiness timeout transitions to off and does not emit start', () => {
+    const events = { start: vi.fn(), stop: vi.fn() };
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const ctrl = new SessionController({
+      urlMatcher: (href) => GAME_URL_RE.test(href),
+      readinessCheck: () => ({ kind: 'not-ready' }),
+      readinessTimeoutMs: 300,
+      pollIntervalMs: 100,
+    });
+    history.replaceState(null, '', '/abc12345');
+    const d = ctrl.activate(events);
+    vi.advanceTimersByTime(500);
+    expect(events.start).not.toHaveBeenCalled();
+    expect(warnSpy).toHaveBeenCalled();
+    warnSpy.mockRestore();
+    d.dispose();
+  });
+});

@@ -1,7 +1,9 @@
+import { applySan } from '@/core/chess-utils';
 import type { FEN, SAN } from '@/core/types';
 import {
   GAME_CONTAINER_SEL,
   MOVE_CELL_SEL,
+  MOVE_LIST_SEL,
   ORIENTATION_BLACK_CLASS,
   ORIENTATION_HOST_SEL,
   ORIENTATION_WHITE_CLASS,
@@ -283,4 +285,52 @@ export function parseStartingFen(doc: Document): FEN | null {
 /** Checks whether the variant is in `SUPPORTED_VARIANTS`. */
 export function isSupportedVariant(variant: string): boolean {
   return (SUPPORTED_VARIANTS as readonly string[]).includes(variant);
+}
+
+export function defaultReadinessCheck(doc: Document): ReadinessResult {
+  const container = doc.querySelector(GAME_CONTAINER_SEL);
+  if (!container) return { kind: 'not-ready' };
+
+  const variant = parseVariant(doc);
+  if (!isSupportedVariant(variant)) {
+    return { kind: 'unsupported-variant', name: variant };
+  }
+
+  const participant = parseParticipant(doc);
+  if (participant === 'spectator') return { kind: 'spectator' };
+
+  const orientation = parseOrientation(doc);
+  if (orientation === null) return { kind: 'not-ready' };
+
+  const initialFen = parseStartingFen(doc);
+  if (initialFen === null) return { kind: 'not-ready' };
+
+  const moveHistory = parseMoveHistory(doc);
+  const currentFen = replayMoves(initialFen, moveHistory);
+  if (currentFen === null) return { kind: 'not-ready' };
+
+  const moveListRoot = doc.querySelector(MOVE_LIST_SEL);
+  if (!moveListRoot) return { kind: 'not-ready' };
+
+  return {
+    kind: 'participant',
+    ctx: {
+      initialFen,
+      currentFen,
+      orientation,
+      moveHistory,
+      gameContainer: container,
+      moveListRoot,
+    },
+  };
+}
+
+function replayMoves(initialFen: FEN, history: readonly SAN[]): FEN | null {
+  let fen = initialFen;
+  for (const san of history) {
+    const next = applySan(fen, san);
+    if (next === null) return null;
+    fen = next;
+  }
+  return fen;
 }
