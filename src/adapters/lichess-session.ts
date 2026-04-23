@@ -11,6 +11,7 @@ import {
   SUPPORTED_VARIANTS,
   VARIANT_CLASS_PREFIX,
 } from './lichess-dom';
+import { LichessDomContractError } from './lichess';
 
 /** Canonical Lichess live-game URL regex. */
 export const GAME_URL_RE =
@@ -309,11 +310,10 @@ export function defaultReadinessCheck(doc: Document): ReadinessResult {
   const moveHistory = parseMoveHistory(doc);
   const currentFen = replayMoves(initialFen, moveHistory);
   if (currentFen === null) {
-    // TODO(Task 10): when LichessDomContractError lands, throw it here instead.
-    // A failed replay means the DOM's move list contains an unrecognized SAN — the issue
-    // is unrecoverable, retrying cannot fix it, and 60 retry-every-50ms cycles before a
-    // silent warn is bad UX for a contract violation.
-    return { kind: 'not-ready' };
+    // Unrecoverable: DOM move list contains a SAN chess.js can't apply. Throw rather
+    // than return not-ready so SessionController's promise-rejection path catches it
+    // and transitions to refused immediately, instead of retrying for 3 seconds.
+    throw new LichessDomContractError(MOVE_LIST_SEL, 'replay failed: move list contains an illegal SAN');
   }
 
   const moveListRoot = doc.querySelector(MOVE_LIST_SEL);
