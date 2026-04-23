@@ -2,10 +2,12 @@
 // @vitest-environment-options { "url": "https://lichess.org/" }
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { Chess } from 'chess.js';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   SessionController,
   GAME_URL_RE,
+  defaultReadinessCheck,
   parseOrientation,
   parseParticipant,
   parseMoveHistory,
@@ -369,9 +371,6 @@ describe('isSupportedVariant', () => {
     expect(isSupportedVariant('')).toBe(false);
   });
 });
-
-import { Chess } from 'chess.js';
-import { defaultReadinessCheck } from './lichess-session';
 
 describe('defaultReadinessCheck', () => {
   it('returns { kind: "participant" } with replay-derived currentFen for a midgame fixture', () => {
