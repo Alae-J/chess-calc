@@ -308,7 +308,13 @@ export function defaultReadinessCheck(doc: Document): ReadinessResult {
 
   const moveHistory = parseMoveHistory(doc);
   const currentFen = replayMoves(initialFen, moveHistory);
-  if (currentFen === null) return { kind: 'not-ready' };
+  if (currentFen === null) {
+    // TODO(Task 10): when LichessDomContractError lands, throw it here instead.
+    // A failed replay means the DOM's move list contains an unrecognized SAN — the issue
+    // is unrecoverable, retrying cannot fix it, and 60 retry-every-50ms cycles before a
+    // silent warn is bad UX for a contract violation.
+    return { kind: 'not-ready' };
+  }
 
   const moveListRoot = doc.querySelector(MOVE_LIST_SEL);
   if (!moveListRoot) return { kind: 'not-ready' };
