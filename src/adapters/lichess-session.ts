@@ -291,6 +291,7 @@ export function defaultReadinessCheck(doc: Document): ReadinessResult {
   const container = doc.querySelector(GAME_CONTAINER_SEL);
   if (!container) return { kind: 'not-ready' };
 
+  // Order matters: variant before participant so spectator-on-unsupported-variant reports as unsupported.
   const variant = parseVariant(doc);
   if (!isSupportedVariant(variant)) {
     return { kind: 'unsupported-variant', name: variant };
