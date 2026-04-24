@@ -84,6 +84,8 @@ export class LichessAdapter implements BoardAdapter {
 
   dispose(): void {
     if (this.disposed) return;
+    // Set disposed BEFORE clearing state so any in-flight observer callbacks
+    // early-return via handleMutation's disposed check. Reordering breaks this.
     this.disposed = true;
     this.observer?.disconnect();
     this.observer = null;
