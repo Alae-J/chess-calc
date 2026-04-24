@@ -23,11 +23,13 @@ export default defineConfig({
       exclude: [
         'src/core/types.ts',
         'src/adapters/adapter.ts',
+        'src/adapters/lichess-dom.ts',
         'src/ui/Chessground.tsx',
         'src/ui/MiniBoard.tsx',
         'src/ui/Overlay.tsx',
         'src/**/*.test.{ts,tsx}',
         'src/dev/**',
+        'src/entrypoints/**',
       ],
       thresholds: {
         lines: 90,
