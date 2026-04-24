@@ -56,12 +56,19 @@ export function Chessground({
   // Init / teardown.
   useEffect(() => {
     if (!containerRef.current) return;
+    const turnColor = sideToMoveColor(fen);
     const config: ChessgroundConfig = {
       fen,
       orientation,
+      turnColor,
+      // Premove is for real games where you're queueing a move for when it
+      // becomes your turn. On the calc-tree mini-board the user is
+      // exploring node-by-node, so out-of-turn drags should be rejected
+      // outright — not silently queued as a ghost move.
+      premovable: { enabled: false },
       movable: {
         free: false,
-        ...(movable ? { color: sideToMoveColor(fen) } : {}),
+        ...(movable ? { color: turnColor } : {}),
         dests: computeDests(fen),
         events: {
           after: (orig, dest) => {
@@ -81,20 +88,22 @@ export function Chessground({
     // Intentionally empty deps — we want this to run once. Prop updates are handled below.
   }, []);
 
-  // Apply fen / orientation / movable updates together. `movable.color`
-  // tracks the side-to-move in the current FEN (so the user plays
-  // alternating turns through the tree, one ply at a time per spec §8.2 —
-  // "play moves from either side" means the user can explore candidate
-  // lines for either color, not skip turn alternation). `movable.dests`
-  // tracks the current fen. Keep these props in one effect to avoid the
-  // past drift bug where splitting them let chessground's init-only config
-  // bake in stale values.
+  // Apply fen / orientation / turnColor / movable updates together. These
+  // four are COUPLED: `turnColor` is what chessground uses to decide
+  // whether a drop is an immediate move or a premove, and `movable.color`
+  // gates which pieces can be picked up. Both must track the side-to-move
+  // in the current FEN, or chessground silently premoves when the user
+  // expected a regular move. Spec §8.2: "play moves from either side"
+  // means the user can explore candidate lines for either color, not skip
+  // turn alternation. Keep in one effect to avoid drift.
   useEffect(() => {
+    const turnColor = sideToMoveColor(fen);
     apiRef.current?.set({
       fen,
       orientation,
+      turnColor,
       movable: {
-        ...(movable ? { color: sideToMoveColor(fen) } : {}),
+        ...(movable ? { color: turnColor } : {}),
         dests: computeDests(fen),
       },
     });
