@@ -129,9 +129,12 @@ export class LichessAdapter implements BoardAdapter {
   }
 
   private checkGameOver(): void {
+    // Monotonic latch: once game is over it stays over, per spec §9.6.
+    // Also avoids re-querying every mutation for the rest of the session.
+    if (this.gameOver) return;
     const doc = this.ctx.moveListRoot.ownerDocument;
     if (!doc) return;
-    this.gameOver = doc.querySelector(GAME_OVER_SEL) !== null;
+    if (doc.querySelector(GAME_OVER_SEL) !== null) this.gameOver = true;
   }
 
   private emitMove(san: SAN): void {
