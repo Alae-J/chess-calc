@@ -53,6 +53,9 @@ fixture stale?" in five seconds.
 | `game-standard-user-white.html` | lichess-session: participant detection for orientation-white | `.round__app.variant-standard`, `.mchat__say` (participant), `.cg-wrap.orientation-white`, `l4x > kwdb >= 4`, no `.result-wrap` |
 | `game-standard-spectator.html` | lichess-session: spectator detection | `.round__app.variant-standard`, **no `.mchat__say`**, `.ruser-bottom` + `.ruser-top` present |
 | `game-standard-gameover.html` | lichess: game-over detection | `l4x .result-wrap` present, all other structure same as midgame |
+| `mutation-append-move.html` | lichess: MutationObserver emits on append | #before + #after <l4x> snippets; after has one more <kwdb> |
+| `mutation-premove.html` | lichess: MutationObserver ignores premove | #before + #after; after has class-toggle only (.premove) |
+| `mutation-hover.html` | lichess: MutationObserver ignores hover | #before + #after; after has class-toggle only (.hovered) |
 
 **Note on synthesized fixtures:** `game-standard-spectator.html` and
 `game-standard-user-white.html` are synthesized from the participant HTML

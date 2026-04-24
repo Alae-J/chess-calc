@@ -7,7 +7,7 @@ import type {
   Unsubscribe,
 } from './adapter';
 import { LichessDomContractError } from './lichess-errors';
-import type { SessionStartContext } from './lichess-session';
+import { parseMoveHistory, type SessionStartContext } from './lichess-session';
 
 /** Debounce window for takeback detection (see spec §9.5). */
 export const TAKEBACK_DEBOUNCE_MS = 150;
@@ -23,12 +23,15 @@ export class LichessAdapter implements BoardAdapter {
   private readonly ctx: SessionStartContext;
   private disposed = false;
   private initialized = false;
+  private observer: MutationObserver | null = null;
+  private observedHistory: SAN[];
 
   constructor(ctx: SessionStartContext) {
     this.ctx = ctx;
     this.currentFen = ctx.currentFen;
     this.orientation = ctx.orientation;
     this.ply = ctx.moveHistory.length;
+    this.observedHistory = [...ctx.moveHistory];
   }
 
   initialize(): void {
@@ -54,6 +57,7 @@ export class LichessAdapter implements BoardAdapter {
       );
     }
     this.initialized = true;
+    this.attachObserver();
   }
 
   getCurrentFEN(): FEN {
@@ -81,7 +85,49 @@ export class LichessAdapter implements BoardAdapter {
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
+    this.observer?.disconnect();
+    this.observer = null;
     this.moveSubscribers.clear();
     this.resetSubscribers.clear();
+  }
+
+  private attachObserver(): void {
+    this.observer = new MutationObserver(() => this.handleMutation());
+    this.observer.observe(this.ctx.moveListRoot, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+  }
+
+  private handleMutation(): void {
+    if (this.disposed) return;
+    const doc = this.ctx.moveListRoot.ownerDocument;
+    if (!doc) return;
+    const history = parseMoveHistory(doc);
+    if (history.length > this.observedHistory.length) {
+      const newMoves = history.slice(this.observedHistory.length);
+      for (const san of newMoves) this.emitMove(san);
+      return;
+    }
+    if (history.length < this.observedHistory.length) {
+      // TODO(Task 13): takeback detection with 150ms debounce.
+      return;
+    }
+    // Equal-length mutation (class toggle on existing cell) — ignore.
+  }
+
+  private emitMove(san: SAN): void {
+    const next = applySan(this.currentFen, san);
+    if (next === null) {
+      // eslint-disable-next-line no-console
+      console.warn(`[chess-calc] LichessAdapter: illegal appended SAN "${san}" ignored`);
+      return;
+    }
+    this.currentFen = next;
+    this.ply += 1;
+    this.observedHistory.push(san);
+    const ev: MoveEvent = { san, fenAfter: next, ply: this.ply };
+    for (const sub of this.moveSubscribers) sub(ev);
   }
 }
