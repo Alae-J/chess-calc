@@ -17,40 +17,25 @@ export type ChessgroundProps = {
 
 function computeDests(fen: FEN): Map<Key, Key[]> {
   const dests = new Map<Key, Key[]>();
-  const addMovesFrom = (f: FEN) => {
-    try {
-      const chess = new Chess(f);
-      for (const move of chess.moves({ verbose: true })) {
-        const from: Key = move.from;
-        const to: Key = move.to;
-        const list = dests.get(from) ?? [];
-        list.push(to);
-        dests.set(from, list);
-      }
-    } catch {
-      // Invalid FEN — ignore.
+  try {
+    const chess = new Chess(fen);
+    for (const move of chess.moves({ verbose: true })) {
+      const from: Key = move.from;
+      const to: Key = move.to;
+      const list = dests.get(from) ?? [];
+      list.push(to);
+      dests.set(from, list);
     }
-  };
-  addMovesFrom(fen);
-  // Also generate moves for the non-to-move side so the user can play
-  // candidate moves from either color. We mutate the FEN's side-to-move
-  // field (and clear en-passant, which depends on it) to let chess.js
-  // enumerate the other side's pseudo-legal moves. The resulting dests
-  // remain legal one-ply-at-a-time moves; chess-calc's tree logic handles
-  // the turn-alternation semantics downstream.
-  const flipped = flipSideToMove(fen);
-  if (flipped !== null) addMovesFrom(flipped);
+  } catch {
+    // Invalid FEN → no legal moves.
+  }
   return dests;
 }
 
-function flipSideToMove(fen: FEN): FEN | null {
+/** Returns 'white' or 'black' based on whose turn it is in the FEN. */
+function sideToMoveColor(fen: FEN): 'white' | 'black' {
   const parts = fen.split(' ');
-  if (parts.length !== 6) return null;
-  const cur = parts[1];
-  if (cur !== 'w' && cur !== 'b') return null;
-  parts[1] = cur === 'w' ? 'b' : 'w';
-  parts[3] = '-'; // en-passant target depends on side-to-move; clear it.
-  return parts.join(' ');
+  return parts[1] === 'b' ? 'black' : 'white';
 }
 
 /**
@@ -76,7 +61,7 @@ export function Chessground({
       orientation,
       movable: {
         free: false,
-        ...(movable ? { color: 'both' as const } : {}),
+        ...(movable ? { color: sideToMoveColor(fen) } : {}),
         dests: computeDests(fen),
         events: {
           after: (orig, dest) => {
@@ -96,17 +81,20 @@ export function Chessground({
     // Intentionally empty deps — we want this to run once. Prop updates are handled below.
   }, []);
 
-  // Apply fen / orientation / movable updates together. `movable.dests`
-  // tracks the current fen (computed for BOTH sides so the user can play
-  // candidate moves from either color per spec §8.2). Keep these props in
-  // one effect to avoid the past drift bug where splitting them let
-  // chessground's init-only config bake in a stale color.
+  // Apply fen / orientation / movable updates together. `movable.color`
+  // tracks the side-to-move in the current FEN (so the user plays
+  // alternating turns through the tree, one ply at a time per spec §8.2 —
+  // "play moves from either side" means the user can explore candidate
+  // lines for either color, not skip turn alternation). `movable.dests`
+  // tracks the current fen. Keep these props in one effect to avoid the
+  // past drift bug where splitting them let chessground's init-only config
+  // bake in stale values.
   useEffect(() => {
     apiRef.current?.set({
       fen,
       orientation,
       movable: {
-        ...(movable ? { color: 'both' as const } : {}),
+        ...(movable ? { color: sideToMoveColor(fen) } : {}),
         dests: computeDests(fen),
       },
     });
