@@ -140,8 +140,11 @@ export class LichessAdapter implements BoardAdapter {
       }, TAKEBACK_DEBOUNCE_MS);
       return;
     }
-    // Equal length: if there's a pending takeback timer and the count recovered,
-    // cancel it — the decrease was transient (animation-frame flicker).
+    // Equal length implies the count recovered: observedHistory is NOT
+    // mutated while the debounce is pending, so equal-length parse here
+    // means history.length === observedHistory.length === pre-shrink count.
+    // If a future refactor updates observedHistory eagerly on the shrink
+    // branch, this condition needs to be re-derived.
     if (this.takebackTimer !== null) {
       clearTimeout(this.takebackTimer);
       this.takebackTimer = null;
