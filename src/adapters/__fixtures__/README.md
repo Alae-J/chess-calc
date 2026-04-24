@@ -56,6 +56,7 @@ fixture stale?" in five seconds.
 | `mutation-append-move.html` | lichess: MutationObserver emits on append | #before + #after <l4x> snippets; after has one more <kwdb> |
 | `mutation-premove.html` | lichess: MutationObserver ignores premove | #before + #after; after has class-toggle only (.premove) |
 | `mutation-hover.html` | lichess: MutationObserver ignores hover | #before + #after; after has class-toggle only (.hovered) |
+| `game-takeback-observed.html` | lichess: takeback detection + onReset emission | #before (N plies) + #after (N-1 plies); tests ResetEvent fires after 150ms debounce, with transient flicker being ignored |
 
 **Note on synthesized fixtures:** `game-standard-spectator.html` and
 `game-standard-user-white.html` are synthesized from the participant HTML

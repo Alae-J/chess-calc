@@ -27,6 +27,7 @@ export class LichessAdapter implements BoardAdapter {
   private observer: MutationObserver | null = null;
   private observedHistory: SAN[];
   private gameOver = false;
+  private takebackTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(ctx: SessionStartContext) {
     this.ctx = ctx;
@@ -94,6 +95,10 @@ export class LichessAdapter implements BoardAdapter {
     // Set disposed BEFORE clearing state so any in-flight observer callbacks
     // early-return via handleMutation's disposed check. Reordering breaks this.
     this.disposed = true;
+    if (this.takebackTimer !== null) {
+      clearTimeout(this.takebackTimer);
+      this.takebackTimer = null;
+    }
     this.observer?.disconnect();
     this.observer = null;
     this.moveSubscribers.clear();
@@ -117,15 +122,57 @@ export class LichessAdapter implements BoardAdapter {
     if (!doc) return;
     const history = parseMoveHistory(doc);
     if (history.length > this.observedHistory.length) {
+      // Cancel any pending takeback debounce — a forward move is the opposite signal.
+      if (this.takebackTimer !== null) {
+        clearTimeout(this.takebackTimer);
+        this.takebackTimer = null;
+      }
       const newMoves = history.slice(this.observedHistory.length);
       for (const san of newMoves) this.emitMove(san);
       return;
     }
     if (history.length < this.observedHistory.length) {
-      // TODO(Task 13): takeback detection with 150ms debounce.
+      // Schedule a debounced takeback verification (see TAKEBACK_DEBOUNCE_MS in spec §9.5).
+      if (this.takebackTimer !== null) clearTimeout(this.takebackTimer);
+      this.takebackTimer = setTimeout(() => {
+        this.takebackTimer = null;
+        this.confirmTakeback();
+      }, TAKEBACK_DEBOUNCE_MS);
       return;
     }
-    // Equal-length mutation (class toggle on existing cell) — ignore.
+    // Equal length: if there's a pending takeback timer and the count recovered,
+    // cancel it — the decrease was transient (animation-frame flicker).
+    if (this.takebackTimer !== null) {
+      clearTimeout(this.takebackTimer);
+      this.takebackTimer = null;
+    }
+  }
+
+  private confirmTakeback(): void {
+    if (this.disposed) return;
+    const doc = this.ctx.moveListRoot.ownerDocument;
+    if (!doc) return;
+    const history = parseMoveHistory(doc);
+    if (history.length >= this.observedHistory.length) {
+      // History recovered before the debounce fired — not actually a takeback.
+      return;
+    }
+    // Replay from initialFen to produce the new currentFen.
+    let replayed = this.ctx.initialFen;
+    for (const san of history) {
+      const next = applySan(replayed, san);
+      if (next === null) {
+        // eslint-disable-next-line no-console
+        console.warn(`[chess-calc] LichessAdapter: takeback replay failed at "${san}"`);
+        return;
+      }
+      replayed = next;
+    }
+    this.currentFen = replayed;
+    this.observedHistory = [...history];
+    this.ply = history.length;
+    const ev: ResetEvent = { fenAfter: replayed };
+    for (const sub of this.resetSubscribers) sub(ev);
   }
 
   private checkGameOver(): void {

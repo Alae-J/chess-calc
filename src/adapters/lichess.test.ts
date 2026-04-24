@@ -4,7 +4,7 @@ import { Chess } from 'chess.js';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import type { MoveEvent } from './adapter';
+import type { MoveEvent, ResetEvent } from './adapter';
 import { LichessAdapter, LichessDomContractError, TAKEBACK_DEBOUNCE_MS } from './lichess';
 import { defaultReadinessCheck, STANDARD_START_FEN } from './lichess-session';
 
@@ -200,5 +200,58 @@ describe('LichessAdapter game-over', () => {
     await new Promise((r) => setTimeout(r, 20));
     expect(events).toHaveLength(0);
     adapter.dispose();
+  });
+});
+
+describe('LichessAdapter takeback', () => {
+  it('emits ResetEvent 150ms after observed move-count decrease', async () => {
+    const { before, after } = loadBeforeAfter('game-takeback-observed.html');
+    const ctx = mutationCtx(before.innerHTML, ['e4', 'c5', 'Nf3', 'd6', 'd4']);
+    const adapter = new LichessAdapter(ctx);
+    adapter.initialize();
+    const resets: ResetEvent[] = [];
+    adapter.onReset((ev) => resets.push(ev));
+
+    ctx.moveListRoot.innerHTML = after.innerHTML;
+    // Before debounce elapses, no reset yet.
+    await new Promise((r) => setTimeout(r, 50));
+    expect(resets).toHaveLength(0);
+    // After debounce elapses, reset fires.
+    await new Promise((r) => setTimeout(r, 150));
+    expect(resets).toHaveLength(1);
+    expect(resets[0]!.fenAfter.split(' ')).toHaveLength(6);
+    adapter.dispose();
+  });
+
+  it('transient decrease that recovers within debounce does not emit ResetEvent', async () => {
+    const { before, after } = loadBeforeAfter('game-takeback-observed.html');
+    const ctx = mutationCtx(before.innerHTML, ['e4', 'c5', 'Nf3', 'd6', 'd4']);
+    const adapter = new LichessAdapter(ctx);
+    adapter.initialize();
+    const resets: ResetEvent[] = [];
+    adapter.onReset((ev) => resets.push(ev));
+
+    // Decrease, then restore within 50ms.
+    ctx.moveListRoot.innerHTML = after.innerHTML;
+    await new Promise((r) => setTimeout(r, 50));
+    ctx.moveListRoot.innerHTML = before.innerHTML;
+    await new Promise((r) => setTimeout(r, 200));
+    expect(resets).toHaveLength(0);
+    adapter.dispose();
+  });
+
+  it('dispose cancels pending takeback debounce', async () => {
+    const { before, after } = loadBeforeAfter('game-takeback-observed.html');
+    const ctx = mutationCtx(before.innerHTML, ['e4', 'c5', 'Nf3', 'd6', 'd4']);
+    const adapter = new LichessAdapter(ctx);
+    adapter.initialize();
+    const resets: ResetEvent[] = [];
+    adapter.onReset((ev) => resets.push(ev));
+
+    ctx.moveListRoot.innerHTML = after.innerHTML;
+    await new Promise((r) => setTimeout(r, 50));
+    adapter.dispose();
+    await new Promise((r) => setTimeout(r, 200));
+    expect(resets).toHaveLength(0);
   });
 });
