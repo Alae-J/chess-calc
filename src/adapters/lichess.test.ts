@@ -31,6 +31,17 @@ function loadBeforeAfter(name: string): { before: Element; after: Element } {
   return { before, after };
 }
 
+/**
+ * Build a minimal SessionStartContext for mutation-observer tests.
+ *
+ * LIMITATION: this helper does NOT construct the full `.round__app`
+ * hierarchy that production `defaultReadinessCheck` produces. `gameContainer`
+ * here is just the body; queries like `gameContainer.querySelector('.result-wrap')`
+ * (Task 12's game-over detection) would return null silently. For tests that
+ * need a realistic `.round__app` subtree with sibling markers (game-over,
+ * status, etc.), either extend this helper or use `ctxFromFixture` with a
+ * fixture that has the needed structure.
+ */
 function mutationCtx(beforeInnerHtml: string, beforeHistory: readonly string[]) {
   const doc = new DOMParser().parseFromString(
     '<!DOCTYPE html><html><body><l4x></l4x></body></html>',
