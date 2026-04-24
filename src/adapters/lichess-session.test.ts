@@ -45,6 +45,10 @@ describe('GAME_URL_RE', () => {
     ['https://lichess.org/abc12345/', true],
     ['https://lichess.org/abc12345/white/', true],
     ['https://lichess.org/ABCdef12', true],
+    ['https://lichess.org/5qTGsc8K3y8H', true],       // 12-char live-game ID
+    ['https://lichess.org/5qTGsc8K3y8H/white', true], // 12-char with color
+    ['https://lichess.org/5qTGsc8K3y8H/black', true], // 12-char with color
+    ['https://lichess.org/5qTGsc8K3y8H/', true],      // 12-char with trailing slash
   ])('matches %s = %s', (url, expected) => {
     expect(GAME_URL_RE.test(url)).toBe(expected);
   });
@@ -63,6 +67,9 @@ describe('GAME_URL_RE', () => {
     ['http://lichess.org/abc12345', false],             // http not https
     ['https://lichess.org/abc12345?foo=1', false],      // query string
     ['https://lichess.org/abc12345#frag', false],
+    ['https://lichess.org/abcdefghij', false],    // 10 chars (between 8 and 12)
+    ['https://lichess.org/abc', false],           // 3 chars
+    ['https://lichess.org/abcdefghijklm', false], // 13 chars
   ])('rejects %s', (url, expected) => {
     expect(GAME_URL_RE.test(url)).toBe(expected);
   });

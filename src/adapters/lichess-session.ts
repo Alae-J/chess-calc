@@ -13,9 +13,21 @@ import {
 } from './lichess-dom';
 import { LichessDomContractError } from './lichess-errors';
 
-/** Canonical Lichess live-game URL regex. */
+/**
+ * Canonical Lichess live-game URL regex.
+ *
+ * Lichess uses two ID forms in user-facing URLs:
+ * - 8-char "short" IDs for redirects and completed-game shares
+ *   (e.g. https://lichess.org/wpt3lW1j).
+ * - 12-char "full" IDs during active live play
+ *   (e.g. https://lichess.org/5qTGsc8K3y8H).
+ *
+ * Both must be matched or the content script silently fails to activate
+ * on live games. The `/white` or `/black` color suffix is optional in
+ * either form.
+ */
 export const GAME_URL_RE =
-  /^https:\/\/lichess\.org\/[a-zA-Z0-9]{8}(\/(white|black))?\/?$/;
+  /^https:\/\/lichess\.org\/(?:[a-zA-Z0-9]{8}|[a-zA-Z0-9]{12})(?:\/(?:white|black))?\/?$/;
 
 /** 100ms poll interval catches sub-500ms A→B→A round-trips (spec §4.2). */
 export const DEFAULT_POLL_INTERVAL_MS = 100;
