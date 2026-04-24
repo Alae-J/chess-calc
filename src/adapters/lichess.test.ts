@@ -168,3 +168,37 @@ describe('LichessAdapter.onMove via MutationObserver', () => {
     adapter.dispose();
   });
 });
+
+describe('LichessAdapter game-over', () => {
+  it('detects game-over marker on initialize from a gameover fixture', () => {
+    const ctx = ctxFromFixture('game-standard-gameover.html');
+    const adapter = new LichessAdapter(ctx);
+    adapter.initialize();
+    expect(adapter.isGameOver()).toBe(true);
+    adapter.dispose();
+  });
+
+  it('isGameOver is false for a midgame fixture', () => {
+    const ctx = ctxFromFixture('game-standard-midgame.html');
+    const adapter = new LichessAdapter(ctx);
+    adapter.initialize();
+    expect(adapter.isGameOver()).toBe(false);
+    adapter.dispose();
+  });
+
+  it('subsequent mutations do not emit MoveEvent after game-over', async () => {
+    const ctx = ctxFromFixture('game-standard-gameover.html');
+    const adapter = new LichessAdapter(ctx);
+    adapter.initialize();
+    const events: MoveEvent[] = [];
+    adapter.onMove((ev) => events.push(ev));
+    // Mutate the move list — should be ignored since gameOver flag is set.
+    const doc = ctx.moveListRoot.ownerDocument;
+    const newCell = doc.createElement('kwdb');
+    newCell.textContent = 'Kh1';
+    ctx.moveListRoot.appendChild(newCell);
+    await new Promise((r) => setTimeout(r, 20));
+    expect(events).toHaveLength(0);
+    adapter.dispose();
+  });
+});

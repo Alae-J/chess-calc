@@ -6,6 +6,7 @@ import type {
   ResetEvent,
   Unsubscribe,
 } from './adapter';
+import { GAME_OVER_SEL } from './lichess-dom';
 import { LichessDomContractError } from './lichess-errors';
 import { parseMoveHistory, type SessionStartContext } from './lichess-session';
 
@@ -25,6 +26,7 @@ export class LichessAdapter implements BoardAdapter {
   private initialized = false;
   private observer: MutationObserver | null = null;
   private observedHistory: SAN[];
+  private gameOver = false;
 
   constructor(ctx: SessionStartContext) {
     this.ctx = ctx;
@@ -57,6 +59,7 @@ export class LichessAdapter implements BoardAdapter {
       );
     }
     this.initialized = true;
+    this.checkGameOver();
     this.attachObserver();
   }
 
@@ -66,6 +69,10 @@ export class LichessAdapter implements BoardAdapter {
 
   getOrientation(): 'white' | 'black' {
     return this.orientation;
+  }
+
+  isGameOver(): boolean {
+    return this.gameOver;
   }
 
   onMove(cb: (ev: MoveEvent) => void): Unsubscribe {
@@ -104,6 +111,8 @@ export class LichessAdapter implements BoardAdapter {
 
   private handleMutation(): void {
     if (this.disposed) return;
+    this.checkGameOver();
+    if (this.gameOver) return;
     const doc = this.ctx.moveListRoot.ownerDocument;
     if (!doc) return;
     const history = parseMoveHistory(doc);
@@ -117,6 +126,12 @@ export class LichessAdapter implements BoardAdapter {
       return;
     }
     // Equal-length mutation (class toggle on existing cell) — ignore.
+  }
+
+  private checkGameOver(): void {
+    const doc = this.ctx.moveListRoot.ownerDocument;
+    if (!doc) return;
+    this.gameOver = doc.querySelector(GAME_OVER_SEL) !== null;
   }
 
   private emitMove(san: SAN): void {
