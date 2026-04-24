@@ -114,7 +114,7 @@ describe('LichessAdapter.onMove via MutationObserver', () => {
     adapter.onMove((ev) => events.push(ev));
     ctx.moveListRoot.innerHTML = after.innerHTML;
     await new Promise((r) => setTimeout(r, 20));
-    expect(events.length).toBeGreaterThanOrEqual(1);
+    expect(events).toHaveLength(1);
     expect(events[0]!.san.length).toBeGreaterThan(0);
     adapter.dispose();
   });
